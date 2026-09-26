@@ -1,5 +1,5 @@
-Flask
-Flask-SocketIO
-eventlet
-Werkzeug
-gunicorn
+Flask>=3.0.0
+Flask-SocketIO>=5.3.0
+eventlet>=0.33.3
+Werkzeug>=3.0.0
+gunicorn>=21.2.0
