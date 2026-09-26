@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIRCUIT // Dark Network</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0e14;
+      --bg-sidebar: #121721;
+      --bg-card: rgba(22, 29, 41, 0.7);
+      --border-color: #1e2838;
+      --neon-blue: #00d2ff;
+      --neon-glow: rgba(0, 210, 255, 0.3);
+      --text-main: #ffffff;
+      --text-muted: #8b9bb4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    
+    body { 
+      background-color: var(--bg-dark); 
+      color: var(--text-main); 
+      display: flex; 
+      height: 100vh; 
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+    /* SIDEBAR GAUCHE */
+    #sidebar { 
+      width: 340px; 
+      background-color: var(--bg-sidebar); 
+      border-right: 1px solid var(--border-color); 
+      display: flex; 
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .sidebar-top {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .user-profile-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .user-profile-btn img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-blue);
+      object-fit: cover;
+    }
+
+    .search-box {
+      padding: 10px 16px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      background: #1a2230;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .search-box i {
+      position: absolute;
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .stories-bar {
+      display: flex;
+      gap: 12px;
+      padding: 10px 16px 15px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .story-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      min-width: 58px;
+    }
+    .story-avatar-frame {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      padding: 2px;
+      border: 2px solid var(--border-color);
+      transition: all 0.3s;
+    }
+    .story-avatar-frame.online {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 8px var(--neon-glow);
+    }
+    .story-avatar-frame img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .story-name {
+      font-size: 10px;
+      color: var(--text-muted);
+      max-width: 58px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+    .chat-item:hover, .chat-item.active {
+      background-color: var(--bg-card);
+    }
+    .chat-item-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--border-color);
+    }
+    .chat-item-info {
+      flex: 1;
+      overflow: hidden;
+    }
+    .chat-item-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chat-item-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    /* ZONE DE CHAT PRINCIPALE */
+    #chat-area { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      position: relative; 
+      background-image: linear-gradient(rgba(11, 14, 20, 0.75), rgba(11, 14, 20, 0.75)), url('/static/bg-pirate.jpg');
+      background-size: cover;
+      background-position: center;
+      transition: background-image 0.3s ease-in-out;
+    }
+
+    .chat-header {
+      padding: 12px 20px;
+      background: rgba(18, 23, 33, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-header-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chat-header-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--neon-blue);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .chat-header-avatar:hover {
+      transform: scale(1.08);
+    }
+
+    #messages { 
+      flex: 1; 
+      padding: 20px 30px; 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 14px; 
+    }
+    
+    .message { display: flex; gap: 10px; max-width: 65%; align-items: flex-end; align-self: flex-start; }
+    .message.me { align-self: flex-end; flex-direction: row-reverse; }
+    .msg-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+    
+    .message-content { 
+      background: rgba(18, 23, 33, 0.9); 
+      padding: 10px 16px; 
+      border-radius: 18px; 
+      font-size: 0.9rem; 
+      border: 1px solid var(--border-color); 
+      backdrop-filter: blur(8px);
+      color: var(--text-main);
+      word-break: break-word;
+    }
+    .message.me .message-content { 
+      background: var(--neon-blue); 
+      color: #000;
+      font-weight: 500;
+      border: none;
+    }
+    .sender-name { font-size: 0.7rem; color: var(--neon-blue); margin-bottom: 3px; font-family: 'Fira Code', monospace; }
+    .message.me .sender-name { display: none; }
+
+    .chat-input-bar { 
+      padding: 16px 24px; 
+      display: flex; 
+      gap: 10px; 
+      align-items: center; 
+      background: rgba(18, 23, 33, 0.85);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .input-pill {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: rgba(5, 7, 10, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 25px;
+      padding: 4px 16px;
+    }
+    .input-pill input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      padding: 8px 0;
+      outline: none;
+      font-size: 0.9rem;
+    }
+    .input-pill-actions {
+      display: flex;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    .input-pill-actions i:hover { color: var(--neon-blue); }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--neon-blue);
+      border: none;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .send-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px var(--neon-glow); }
+
+    #auth-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .auth-box { background: var(--bg-sidebar); padding: 30px; border-radius: 16px; width: 320px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 15px; }
+    .auth-box input { padding: 10px 14px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; outline: none; }
+    .auth-box button { padding: 10px; background: var(--neon-blue); border: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay Connexion / Inscription -->
+  <div id="auth-overlay">
+    <div class="auth-box">
+      <h3 style="color:var(--neon-blue); text-align:center; font-family:'Fira Code';">// DARK NETWORK</h3>
+      <input type="text" id="auth-username" placeholder="Pseudo">
+      <input type="password" id="auth-password" placeholder="Mot de passe">
+      <button onclick="login()">Se Connecter</button>
+      <button onclick="register()" style="background:transparent; color:#fff; border:1px solid var(--border-color);">Créer Identifiant</button>
+    </div>
+  </div>
+
+  <!-- Sidebar Gauche -->
+  <div id="sidebar">
+    <div class="sidebar-top">
+      <div class="user-profile-btn" onclick="document.getElementById('avatar-input').click()" title="Changer votre photo de profil">
+        <img id="my-avatar" src="/static/default_avatar.png">
+        <div>
+          <div id="my-username" style="font-size:0.9rem; font-weight:bold;">Anonyme</div>
+          <div style="font-size:10px; color:var(--neon-blue); font-family:'Fira Code';">EN LIGNE</div>
+        </div>
+      </div>
+      <button onclick="createCircuit()" style="background:transparent; border:1px solid var(--border-color); color:var(--neon-blue); padding:5px 10px; border-radius:15px; font-size:11px; cursor:pointer;">+ Circuit</button>
+      <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar()">
+    </div>
+
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="join-code" placeholder="Entrer un code d'invitation..." onkeypress="if(event.key==='Enter') joinCircuit()">
+    </div>
+
+    <div class="stories-bar" id="stories-container"></div>
+    <div class="chat-list" id="circuits-container"></div>
+  </div>
+
+  <!-- Zone de Chat Principale -->
+  <div id="chat-area">
+    <div class="chat-header">
+      <div class="chat-header-user">
+        <img id="chat-header-img" src="/static/default_avatar.png" class="chat-header-avatar" onclick="if(currentCircuitId) document.getElementById('circuit-icon-input').click()" title="Changer l'icône du circuit">
+        <div>
+          <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez un circuit</div>
+          <div id="chat-subtitle" style="font-size:11px; color:var(--text-muted);">Cryptage du canal actif</div>
+        </div>
+      </div>
+      <div style="color:var(--text-muted); display:flex; gap:15px; font-size:1.1rem; align-items:center;">
+        <i class="fa-solid fa-image" title="Changer le fond" style="cursor:pointer;" onclick="if(currentCircuitId) document.getElementById('bg-input').click()"></i>
+      </div>
+      <!-- Inputs fichiers masqués -->
+      <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="uploadBackground()">
+      <input type="file" id="circuit-icon-input" accept="image/*" style="display:none" onchange="uploadCircuitIcon()">
+    </div>
+
+    <div id="messages"></div>
+
+    <div class="chat-input-bar">
+      <input type="file" id="media-input" accept="image/*" style="display:none" onchange="sendMedia()">
+      <div class="input-pill">
+        <input type="text" id="msg-input" placeholder="Envoyer un message..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <div class="input-pill-actions">
+          <i class="fa-solid fa-camera" onclick="if(currentCircuitId) document.getElementById('media-input').click()"></i>
+        </div>
+      </div>
+      <button class="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    let currentCircuitId = null;
+    let currentUsername = "";
+
+    async function login() {
+      const u = document.getElementById('auth-username').value.trim();
+      const p = document.getElementById('auth-password').value.trim();
+      if (!u || !p) return;
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: u, password: p})
+      });
+      const data = await res.json();
+      if (res.ok) {
+        currentUsername = data.user.username;
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('my-username').innerText = currentUsername;
+        document.getElementById('my-avatar').src = data.user.avatar_url || '/static/default_avatar.png';
+        loadCircuits();
+      } else {
+        alert(data.error || "Erreur de connexion");
+      }
+    }
+
+    async function register() {
+      const u = document.getElementById('auth-username').value.trim();
+      const p = document.getElementById('auth-password').value.trim();
+      if (!u || !p) return;
+
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: u, password: p})
+      });
+      if (res.ok) login();
+      else {
+        const data = await res.json();
+        alert(data.error || "Erreur lors de la création");
+      }
+    }
+
+    async function loadCircuits() {
+      const res = await fetch('/api/my-circuits');
+      if (!res.ok) return;
+      const circuits = await res.json();
+      const container = document.getElementById('circuits-container');
+      container.innerHTML = '';
+
+      circuits.forEach((c, index) => {
+        const item = document.createElement('div');
+        item.id = `circuit-item-${c.id}`;
+        item.className = `chat-item ${currentCircuitId === c.id ? 'active' : ''}`;
+        item.onclick = () => selectCircuit(c.id, c.name, c.code, c.background_url, c.icon_url, item);
+        item.innerHTML = `
+          <img src="${c.icon_url || '/static/default_avatar.png'}" class="chat-item-avatar" id="circuit-img-${c.id}">
+          <div class="chat-item-info">
+            <div class="chat-item-name">${c.name}</div>
+            <div class="chat-item-sub"><i class="fa-solid fa-key" style="font-size:9px;"></i> Code: ${c.code}</div>
+          </div>
+        `;
+        container.appendChild(item);
+
+        // Sélection automatique du premier circuit au démarrage
+        if (index === 0 && !currentCircuitId) {
+          selectCircuit(c.id, c.name, c.code, c.background_url, c.icon_url, item);
+        }
+      });
+    }
+
+    async function createCircuit() {
+      const name = prompt("Nom du nouveau Circuit :");
+      if (!name || !name.trim()) return;
+      const res = await fetch('/api/circuit/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name.trim()})
+      });
+      if (res.ok) loadCircuits();
+    }
+
+    async function joinCircuit() {
+      const code = document.getElementById('join-code').value.trim();
+      if (!code) return;
+      const res = await fetch('/api/circuit/join', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({invite_code: code})
+      });
+      if (res.ok) {
+        document.getElementById('join-code').value = '';
+        loadCircuits();
+      } else {
+        alert("Code de circuit invalide.");
+      }
+    }
+
+    async function selectCircuit(id, name, code, bgUrl, iconUrl, element) {
+      if (currentCircuitId) socket.emit('leave_circuit', { circuit_id: currentCircuitId });
+      currentCircuitId = id;
+
+      document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+      if (element) element.classList.add('active');
+
+      document.getElementById('chat-title').innerText = name;
+      document.getElementById('chat-subtitle').innerText = `Code invitation: ${code}`;
+      document.getElementById('chat-header-img').src = iconUrl || '/static/default_avatar.png';
+      document.getElementById('messages').innerHTML = '';
+
+      applyBackground(bgUrl);
+
+      socket.emit('join_circuit', { circuit_id: id });
+      loadMessages(id);
+      loadMembers(id);
+    }
+
+    function applyBackground(url) {
+      const chatArea = document.getElementById('chat-area');
+      const validUrl = (url && url !== "null") ? url : '/static/bg-pirate.jpg';
+      chatArea.style.backgroundImage = `linear-gradient(rgba(11, 14, 20, 0.75), rgba(11, 14, 20, 0.75)), url('${validUrl}')`;
+    }
+
+    async function loadMessages(circuitId) {
+      const res = await fetch(`/api/circuit/${circuitId}/messages`);
+      if (!res.ok) return;
+      const messages = await res.json();
+      messages.forEach(msg => renderSingleMessage(msg));
+    }
+
+    async function loadMembers(circuitId) {
+      const res = await fetch(`/api/circuit/${circuitId}/members`);
+      if (!res.ok) return;
+      const members = await res.json();
+
+      const storiesContainer = document.getElementById('stories-container');
+      storiesContainer.innerHTML = members.map(m => `
+        <div class="story-item" title="${m.username}">
+          <div class="story-avatar-frame ${m.is_online ? 'online' : ''}">
+            <img src="${m.avatar_url || '/static/default_avatar.png'}">
+          </div>
+          <span class="story-name">${m.username}</span>
+        </div>
+      `).join('');
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('msg-input');
+      if (!input.value.trim() || !currentCircuitId) return;
+      socket.emit('send_message', { circuit_id: currentCircuitId, content: input.value.trim() });
+      input.value = '';
+    }
+
+    async function sendMedia() {
+      const fileInput = document.getElementById('media-input');
+      if (!fileInput.files[0] || !currentCircuitId) return;
+      const formData = new FormData();
+      formData.append('media', fileInput.files[0]);
+      const res = await fetch('/api/upload-media', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        socket.emit('send_message', { circuit_id: currentCircuitId, media_url: data.media_url });
+        fileInput.value = '';
+      }
+    }
+
+    async function uploadAvatar() {
+      const fileInput = document.getElementById('avatar-input');
+      if (!fileInput.files[0]) return;
+      const formData = new FormData();
+      formData.append('avatar', fileInput.files[0]);
+      const res = await fetch('/api/upload-avatar', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('my-avatar').src = data.avatar_url;
+        if (currentCircuitId) loadMembers(currentCircuitId);
+      }
+    }
+
+    async function uploadBackground() {
+      const fileInput = document.getElementById('bg-input');
+      if (!fileInput.files[0] || !currentCircuitId) return;
+      const formData = new FormData();
+      formData.append('background', fileInput.files[0]);
+      const res = await fetch(`/api/circuit/${currentCircuitId}/upload-background`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) applyBackground(data.background_url);
+    }
+
+    async function uploadCircuitIcon() {
+      const fileInput = document.getElementById('circuit-icon-input');
+      if (!fileInput.files[0] || !currentCircuitId) return;
+      const formData = new FormData();
+      formData.append('icon', fileInput.files[0]);
+      const res = await fetch(`/api/circuit/${currentCircuitId}/upload-icon`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('chat-header-img').src = data.icon_url;
+        const sidebarImg = document.getElementById(`circuit-img-${currentCircuitId}`);
+        if (sidebarImg) sidebarImg.src = data.icon_url;
+      }
+    }
+
+    function renderSingleMessage(data) {
+      const isMe = data.sender === currentUsername;
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${isMe ? 'me' : ''}`;
+      msgDiv.innerHTML = `
+        <img src="${data.avatar || '/static/default_avatar.png'}" class="msg-avatar">
+        <div class="message-content">
+          ${!isMe ? `<div class="sender-name">${data.sender}</div>` : ''}
+          ${data.content ? `<div>${data.content}</div>` : ''}
+          ${data.media_url ? `<img src="${data.media_url}" style="max-width:250px; border-radius:8px; margin-top:5px; display:block;">` : ''}
+        </div>
+      `;
+      const messagesContainer = document.getElementById('messages');
+      messagesContainer.appendChild(msgDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // --- EVENEMENTS TEMPS REEL (WEBSOCKETS) ---
+    socket.on('new_message', data => {
+      if (data.circuit_id == currentCircuitId) renderSingleMessage(data);
+    });
+
+    socket.on('background_updated', data => {
+      if (data.circuit_id == currentCircuitId) applyBackground(data.background_url);
+    });
+
+    socket.on('circuit_icon_updated', data => {
+      const sidebarImg = document.getElementById(`circuit-img-${data.circuit_id}`);
+      if (sidebarImg) sidebarImg.src = data.icon_url;
+      if (data.circuit_id == currentCircuitId) {
+        document.getElementById('chat-header-img').src = data.icon_url;
+      }
+    });
+
+    socket.on('presence_update', data => {
+      if (data.circuit_id == currentCircuitId) loadMembers(currentCircuitId);
+    });
+  </script>
+</body>
+</html>
