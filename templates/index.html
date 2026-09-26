@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CIRCUIT // Dark Network</title>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,10 +11,10 @@
     :root {
       --bg-dark: #0b0e14;
       --bg-sidebar: #121721;
-      --bg-card: rgba(22, 29, 41, 0.7);
+      --bg-card: rgba(22, 29, 41, 0.75);
       --border-color: #1e2838;
       --neon-blue: #00d2ff;
-      --neon-glow: rgba(0, 210, 255, 0.3);
+      --neon-glow: rgba(0, 210, 255, 0.35);
       --text-main: #ffffff;
       --text-muted: #8b9bb4;
     }
@@ -26,7 +26,9 @@
       color: var(--text-main); 
       display: flex; 
       height: 100vh; 
+      height: 100dvh;
       overflow: hidden;
+      width: 100vw;
     }
 
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -41,6 +43,8 @@
       display: flex; 
       flex-direction: column;
       z-index: 10;
+      transition: transform 0.3s ease-in-out;
+      flex-shrink: 0;
     }
 
     .sidebar-top {
@@ -179,15 +183,16 @@
       display: flex; 
       flex-direction: column; 
       position: relative; 
-      background-image: linear-gradient(rgba(11, 14, 20, 0.75), rgba(11, 14, 20, 0.75)), url('/static/bg-pirate.jpg');
+      background-image: linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.8)), url('/static/bg-pirate.jpg');
       background-size: cover;
       background-position: center;
       transition: background-image 0.3s ease-in-out;
+      width: 100%;
     }
 
     .chat-header {
-      padding: 12px 20px;
-      background: rgba(18, 23, 33, 0.85);
+      padding: 12px 16px;
+      background: rgba(18, 23, 33, 0.9);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -200,8 +205,8 @@
       gap: 12px;
     }
     .chat-header-avatar {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       object-fit: cover;
       border: 1px solid var(--neon-blue);
@@ -212,23 +217,33 @@
       transform: scale(1.08);
     }
 
+    .back-btn {
+      display: none;
+      background: transparent;
+      border: none;
+      color: var(--neon-blue);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding-right: 8px;
+    }
+
     #messages { 
       flex: 1; 
-      padding: 20px 30px; 
+      padding: 16px; 
       overflow-y: auto; 
       display: flex; 
       flex-direction: column; 
-      gap: 14px; 
+      gap: 12px; 
     }
     
-    .message { display: flex; gap: 10px; max-width: 65%; align-items: flex-end; align-self: flex-start; }
+    .message { display: flex; gap: 10px; max-width: 85%; align-items: flex-end; align-self: flex-start; }
     .message.me { align-self: flex-end; flex-direction: row-reverse; }
-    .msg-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+    .msg-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
     
     .message-content { 
-      background: rgba(18, 23, 33, 0.9); 
-      padding: 10px 16px; 
-      border-radius: 18px; 
+      background: rgba(18, 23, 33, 0.92); 
+      padding: 10px 14px; 
+      border-radius: 16px; 
       font-size: 0.9rem; 
       border: 1px solid var(--border-color); 
       backdrop-filter: blur(8px);
@@ -245,11 +260,11 @@
     .message.me .sender-name { display: none; }
 
     .chat-input-bar { 
-      padding: 16px 24px; 
+      padding: 12px 16px; 
       display: flex; 
       gap: 10px; 
       align-items: center; 
-      background: rgba(18, 23, 33, 0.85);
+      background: rgba(18, 23, 33, 0.9);
       backdrop-filter: blur(10px);
       border-top: 1px solid var(--border-color);
     }
@@ -258,10 +273,10 @@
       flex: 1;
       display: flex;
       align-items: center;
-      background: rgba(5, 7, 10, 0.7);
+      background: rgba(5, 7, 10, 0.8);
       border: 1px solid var(--border-color);
       border-radius: 25px;
-      padding: 4px 16px;
+      padding: 4px 14px;
     }
     .input-pill input {
       flex: 1;
@@ -271,10 +286,11 @@
       padding: 8px 0;
       outline: none;
       font-size: 0.9rem;
+      width: 100%;
     }
     .input-pill-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       color: var(--text-muted);
       font-size: 1.1rem;
       cursor: pointer;
@@ -293,13 +309,46 @@
       justify-content: center;
       cursor: pointer;
       transition: transform 0.2s;
+      flex-shrink: 0;
     }
     .send-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px var(--neon-glow); }
 
-    #auth-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .auth-box { background: var(--bg-sidebar); padding: 30px; border-radius: 16px; width: 320px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 15px; }
-    .auth-box input { padding: 10px 14px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; outline: none; }
-    .auth-box button { padding: 10px; background: var(--neon-blue); border: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
+    /* MODAL / AUTH OVERLAY */
+    #auth-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+    .auth-box { background: var(--bg-sidebar); padding: 25px; border-radius: 16px; width: 100%; max-width: 340px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 15px; }
+    .auth-box input { padding: 12px 14px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; outline: none; font-size: 0.9rem; }
+    .auth-box button { padding: 12px; background: var(--neon-blue); border: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
+
+    /* RESPONSIVE DESIGN (MOBILES & TABLETTES) */
+    @media (max-width: 768px) {
+      #sidebar {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+      }
+      #chat-area {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        display: none; /* Masqué par défaut en mobile */
+      }
+      body.chat-active #sidebar {
+        display: none;
+      }
+      body.chat-active #chat-area {
+        display: flex;
+      }
+      .back-btn {
+        display: block; /* Flèche retour visible en mobile */
+      }
+      .message {
+        max-width: 90%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -325,13 +374,13 @@
           <div style="font-size:10px; color:var(--neon-blue); font-family:'Fira Code';">EN LIGNE</div>
         </div>
       </div>
-      <button onclick="createCircuit()" style="background:transparent; border:1px solid var(--border-color); color:var(--neon-blue); padding:5px 10px; border-radius:15px; font-size:11px; cursor:pointer;">+ Circuit</button>
+      <button onclick="createCircuit()" style="background:transparent; border:1px solid var(--border-color); color:var(--neon-blue); padding:6px 12px; border-radius:15px; font-size:11px; cursor:pointer;">+ Circuit</button>
       <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar()">
     </div>
 
     <div class="search-box">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="join-code" placeholder="Entrer un code d'invitation..." onkeypress="if(event.key==='Enter') joinCircuit()">
+      <input type="text" id="join-code" placeholder="Code d'invitation..." onkeypress="if(event.key==='Enter') joinCircuit()">
     </div>
 
     <div class="stories-bar" id="stories-container"></div>
@@ -342,6 +391,7 @@
   <div id="chat-area">
     <div class="chat-header">
       <div class="chat-header-user">
+        <button class="back-btn" onclick="closeChatMobile()"><i class="fa-solid fa-arrow-left"></i></button>
         <img id="chat-header-img" src="/static/default_avatar.png" class="chat-header-avatar" onclick="if(currentCircuitId) document.getElementById('circuit-icon-input').click()" title="Changer l'icône du circuit">
         <div>
           <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez un circuit</div>
@@ -435,8 +485,8 @@
         `;
         container.appendChild(item);
 
-        // Sélection automatique du premier circuit au démarrage
-        if (index === 0 && !currentCircuitId) {
+        // Sur PC uniquement : Sélection automatique du premier circuit au démarrage
+        if (index === 0 && !currentCircuitId && window.innerWidth > 768) {
           selectCircuit(c.id, c.name, c.code, c.background_url, c.icon_url, item);
         }
       });
@@ -483,15 +533,22 @@
 
       applyBackground(bgUrl);
 
+      // Activer l'affichage mobile du chat
+      document.body.classList.add('chat-active');
+
       socket.emit('join_circuit', { circuit_id: id });
       loadMessages(id);
       loadMembers(id);
     }
 
+    function closeChatMobile() {
+      document.body.classList.remove('chat-active');
+    }
+
     function applyBackground(url) {
       const chatArea = document.getElementById('chat-area');
       const validUrl = (url && url !== "null") ? url : '/static/bg-pirate.jpg';
-      chatArea.style.backgroundImage = `linear-gradient(rgba(11, 14, 20, 0.75), rgba(11, 14, 20, 0.75)), url('${validUrl}')`;
+      chatArea.style.backgroundImage = `linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.8)), url('${validUrl}')`;
     }
 
     async function loadMessages(circuitId) {
@@ -583,7 +640,7 @@
         <div class="message-content">
           ${!isMe ? `<div class="sender-name">${data.sender}</div>` : ''}
           ${data.content ? `<div>${data.content}</div>` : ''}
-          ${data.media_url ? `<img src="${data.media_url}" style="max-width:250px; border-radius:8px; margin-top:5px; display:block;">` : ''}
+          ${data.media_url ? `<img src="${data.media_url}" style="max-width:100%; max-height:250px; border-radius:8px; margin-top:5px; display:block; object-fit:cover;">` : ''}
         </div>
       `;
       const messagesContainer = document.getElementById('messages');
