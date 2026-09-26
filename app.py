@@ -17,10 +17,11 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # Base de données temporaire en mémoire
-USERS = {}            # {username: {"password": p, "avatar_url": url}}
-CIRCUITS = {}         # {id: {"id": id, "name": name, "code": code, "background_url": url, "icon_url": url}}
-CIRCUIT_MEMBERS = {}  # {circuit_id: set(username1, username2)}
-MESSAGES = {}         # {circuit_id: [msg1, msg2]}
+USERS = {}             # {username: {"password": p, "avatar_url": url}}
+CIRCUITS = {}          # {id: {"id": id, "name": name, "code": code, "background_url": url, "icon_url": url}}
+CIRCUIT_MEMBERS = {}   # {circuit_id: set(username1, username2)}
+MESSAGES = {}          # {circuit_id: [msg1, msg2]}
+PRIVATE_MESSAGES = []  # [{sender, receiver, content, media_url, avatar}]
 
 
 def generate_code():
@@ -49,7 +50,7 @@ init_default_circuit()
 def index():
     return render_template('index.html')
 
-# --- AUTHENTIFICATION ---
+# --- AUTHENTIFICATION & UTILISATEURS ---
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -108,6 +109,21 @@ def register():
         CIRCUIT_MEMBERS["1"].add(username)
 
     return jsonify({"success": True})
+
+
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    current_user = session.get('username')
+    if not current_user:
+        return jsonify([]), 401
+
+    # Retourne tous les utilisateurs sauf soi-même
+    user_list = [
+        {"username": u, "avatar_url": data.get("avatar_url", "/static/default_avatar.png")}
+        for u, data in USERS.items()
+        if u != current_user
+    ]
+    return jsonify(user_list)
 
 # --- GESTION DES CIRCUITS ---
 
@@ -185,6 +201,21 @@ def get_members(circuit_id):
 @app.route('/api/circuit/<circuit_id>/messages', methods=['GET'])
 def get_messages(circuit_id):
     return jsonify(MESSAGES.get(circuit_id, []))
+
+
+@app.route('/api/private-messages/<target_user>', methods=['GET'])
+def get_private_messages(target_user):
+    username = session.get('username')
+    if not username:
+        return jsonify([]), 401
+
+    # Récupérer l'historique entre l'utilisateur actuel et le destinataire
+    history = [
+        m for m in PRIVATE_MESSAGES
+        if (m['sender'] == username and m['receiver'] == target_user) or
+           (m['sender'] == target_user and m['receiver'] == username)
+    ]
+    return jsonify(history)
 
 # --- UPLOADS DE FICHIERS & MÉDIAS ---
 
@@ -270,6 +301,13 @@ def handle_leave(data):
     leave_room(circuit_id)
 
 
+@socketio.on('join_private_chat')
+def handle_join_private(data):
+    username = session.get('username')
+    if username:
+        join_room(username)  # Chaque utilisateur rejoint une room à son propre nom
+
+
 @socketio.on('send_message')
 def handle_message(data):
     circuit_id = str(data.get('circuit_id'))
@@ -288,6 +326,30 @@ def handle_message(data):
         MESSAGES[circuit_id].append(msg)
 
     emit('new_message', msg, room=circuit_id)
+
+
+@socketio.on('send_private_message')
+def handle_private_message(data):
+    sender = session.get('username')
+    target_user = data.get('target_user')
+    if not sender or not target_user:
+        return
+
+    sender_avatar = USERS.get(sender, {}).get('avatar_url', '/static/default_avatar.png')
+
+    msg = {
+        "sender": sender,
+        "receiver": target_user,
+        "content": data.get('content', ''),
+        "media_url": data.get('media_url', None),
+        "avatar": sender_avatar
+    }
+
+    PRIVATE_MESSAGES.append(msg)
+
+    # Envoie le message au destinataire et à l'expéditeur
+    emit('new_private_message', msg, room=target_user)
+    emit('new_private_message', msg, room=sender)
 
 
 if __name__ == '__main__':
