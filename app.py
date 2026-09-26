@@ -17,15 +17,20 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # Base de données temporaire en mémoire
-USERS = {}             # {username: {"password": p, "avatar_url": url}}
-CIRCUITS = {}          # {id: {"id": id, "name": name, "code": code, "background_url": url, "icon_url": url}}
-CIRCUIT_MEMBERS = {}   # {circuit_id: set(username1, username2)}
-MESSAGES = {}          # {circuit_id: [msg1, msg2]}
-PRIVATE_MESSAGES = []  # [{sender, receiver, content, media_url, avatar}]
+USERS = {}            # {username: {"password": p, "avatar_url": url}}
+CIRCUITS = {}         # {id: {"id": id, "name": name, "code": code, "background_url": url, "icon_url": url}}
+CIRCUIT_MEMBERS = {}  # {circuit_id: set(username1, username2)}
+MESSAGES = {}         # {circuit_id: [msg1, msg2]}
+PRIVATE_MESSAGES = {} # {"user1_user2": [msg1, msg2]}
 
 
 def generate_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+def get_private_room_id(user1, user2):
+    """Génère un nom de salon unique et trié pour 2 utilisateurs"""
+    return "room_" + "_".join(sorted([user1, user2]))
 
 
 def init_default_circuit():
@@ -50,7 +55,7 @@ init_default_circuit()
 def index():
     return render_template('index.html')
 
-# --- AUTHENTIFICATION & UTILISATEURS ---
+# --- AUTHENTIFICATION ---
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -112,18 +117,18 @@ def register():
 
 
 @app.route('/api/users', methods=['GET'])
-def get_users():
+def get_all_users():
+    """Retourne la liste de tous les utilisateurs sauf soi-même"""
     current_user = session.get('username')
     if not current_user:
         return jsonify([]), 401
 
-    # Retourne tous les utilisateurs sauf soi-même
-    user_list = [
+    users_list = [
         {"username": u, "avatar_url": data.get("avatar_url", "/static/default_avatar.png")}
         for u, data in USERS.items()
         if u != current_user
     ]
-    return jsonify(user_list)
+    return jsonify(users_list)
 
 # --- GESTION DES CIRCUITS ---
 
@@ -209,13 +214,8 @@ def get_private_messages(target_user):
     if not username:
         return jsonify([]), 401
 
-    # Récupérer l'historique entre l'utilisateur actuel et le destinataire
-    history = [
-        m for m in PRIVATE_MESSAGES
-        if (m['sender'] == username and m['receiver'] == target_user) or
-           (m['sender'] == target_user and m['receiver'] == username)
-    ]
-    return jsonify(history)
+    room_id = get_private_room_id(username, target_user)
+    return jsonify(PRIVATE_MESSAGES.get(room_id, []))
 
 # --- UPLOADS DE FICHIERS & MÉDIAS ---
 
@@ -304,8 +304,10 @@ def handle_leave(data):
 @socketio.on('join_private_chat')
 def handle_join_private(data):
     username = session.get('username')
-    if username:
-        join_room(username)  # Chaque utilisateur rejoint une room à son propre nom
+    target_user = data.get('target_user')
+    if username and target_user:
+        room_id = get_private_room_id(username, target_user)
+        join_room(room_id)
 
 
 @socketio.on('send_message')
@@ -330,26 +332,29 @@ def handle_message(data):
 
 @socketio.on('send_private_message')
 def handle_private_message(data):
-    sender = session.get('username')
+    username = session.get('username', 'Anonyme')
     target_user = data.get('target_user')
-    if not sender or not target_user:
+
+    if not username or not target_user:
         return
 
-    sender_avatar = USERS.get(sender, {}).get('avatar_url', '/static/default_avatar.png')
+    room_id = get_private_room_id(username, target_user)
+    user_avatar = USERS.get(username, {}).get('avatar_url', '/static/default_avatar.png')
 
     msg = {
-        "sender": sender,
-        "receiver": target_user,
+        "sender": username,
+        "target": target_user,
         "content": data.get('content', ''),
         "media_url": data.get('media_url', None),
-        "avatar": sender_avatar
+        "avatar": user_avatar
     }
 
-    PRIVATE_MESSAGES.append(msg)
+    if room_id not in PRIVATE_MESSAGES:
+        PRIVATE_MESSAGES[room_id] = []
 
-    # Envoie le message au destinataire et à l'expéditeur
-    emit('new_private_message', msg, room=target_user)
-    emit('new_private_message', msg, room=sender)
+    PRIVATE_MESSAGES[room_id].append(msg)
+
+    emit('new_private_message', msg, room=room_id)
 
 
 if __name__ == '__main__':
