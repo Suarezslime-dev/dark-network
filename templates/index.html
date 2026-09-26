@@ -10,7 +10,7 @@
   <style>
     :root {
       --bg-dark: #0b0e14;
-      --bg-sidebar: #121721;
+      --bg-sidebar: rgba(18, 23, 33, 0.9);
       --bg-card: rgba(22, 29, 41, 0.75);
       --border-color: #1e2838;
       --neon-blue: #00d2ff;
@@ -22,7 +22,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
     
     body { 
-      background-color: var(--bg-dark); 
+      background: linear-gradient(rgba(11, 14, 20, 0.75), rgba(11, 14, 20, 0.75)), url('/static/bg-pirate.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: var(--text-main); 
       display: flex; 
       height: 100vh; 
@@ -39,6 +40,7 @@
     #sidebar { 
       width: 340px; 
       background-color: var(--bg-sidebar); 
+      backdrop-filter: blur(12px);
       border-right: 1px solid var(--border-color); 
       display: flex; 
       flex-direction: column;
@@ -66,6 +68,30 @@
       border-radius: 50%;
       border: 2px solid var(--neon-blue);
       object-fit: cover;
+    }
+
+    /* Onglets Tchats de groupe vs Messages Privés */
+    .chat-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(10, 15, 20, 0.5);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--neon-blue);
+      border-bottom: 2px solid var(--neon-blue);
+      background: rgba(0, 210, 255, 0.05);
     }
 
     .search-box {
@@ -183,16 +209,13 @@
       display: flex; 
       flex-direction: column; 
       position: relative; 
-      background-image: linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.8)), url('/static/bg-pirate.jpg');
-      background-size: cover;
-      background-position: center;
-      transition: background-image 0.3s ease-in-out;
+      background: transparent;
       width: 100%;
     }
 
     .chat-header {
       padding: 12px 16px;
-      background: rgba(18, 23, 33, 0.9);
+      background: rgba(18, 23, 33, 0.85);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -264,7 +287,7 @@
       display: flex; 
       gap: 10px; 
       align-items: center; 
-      background: rgba(18, 23, 33, 0.9);
+      background: rgba(18, 23, 33, 0.85);
       backdrop-filter: blur(10px);
       border-top: 1px solid var(--border-color);
     }
@@ -319,7 +342,7 @@
     .auth-box input { padding: 12px 14px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; outline: none; font-size: 0.9rem; }
     .auth-box button { padding: 12px; background: var(--neon-blue); border: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
 
-    /* RESPONSIVE DESIGN (MOBILES & TABLETTES) */
+    /* RESPONSIVE DESIGN (MOBILES) */
     @media (max-width: 768px) {
       #sidebar {
         width: 100%;
@@ -334,7 +357,7 @@
         top: 0;
         bottom: 0;
         left: 0;
-        display: none; /* Masqué par défaut en mobile */
+        display: none;
       }
       body.chat-active #sidebar {
         display: none;
@@ -343,7 +366,7 @@
         display: flex;
       }
       .back-btn {
-        display: block; /* Flèche retour visible en mobile */
+        display: block;
       }
       .message {
         max-width: 90%;
@@ -378,6 +401,12 @@
       <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar()">
     </div>
 
+    <!-- Navigation Onglets (Circuits vs MP) -->
+    <div class="chat-tabs">
+      <button class="tab-btn active" id="tab-circuits" onclick="switchTab('circuits')"><i class="fa-solid fa-layer-group"></i> Circuits</button>
+      <button class="tab-btn" id="tab-directs" onclick="switchTab('directs')"><i class="fa-solid fa-user-lock"></i> Directs (MP)</button>
+    </div>
+
     <div class="search-box">
       <i class="fa-solid fa-magnifying-glass"></i>
       <input type="text" id="join-code" placeholder="Code d'invitation..." onkeypress="if(event.key==='Enter') joinCircuit()">
@@ -385,6 +414,7 @@
 
     <div class="stories-bar" id="stories-container"></div>
     <div class="chat-list" id="circuits-container"></div>
+    <div class="chat-list" id="users-container" style="display:none;"></div>
   </div>
 
   <!-- Zone de Chat Principale -->
@@ -394,12 +424,12 @@
         <button class="back-btn" onclick="closeChatMobile()"><i class="fa-solid fa-arrow-left"></i></button>
         <img id="chat-header-img" src="/static/default_avatar.png" class="chat-header-avatar" onclick="if(currentCircuitId) document.getElementById('circuit-icon-input').click()" title="Changer l'icône du circuit">
         <div>
-          <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez un circuit</div>
-          <div id="chat-subtitle" style="font-size:11px; color:var(--text-muted);">Cryptage du canal actif</div>
+          <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez une discussion</div>
+          <div id="chat-subtitle" style="font-size:11px; color:var(--text-muted);">Canal sécurisé</div>
         </div>
       </div>
       <div style="color:var(--text-muted); display:flex; gap:15px; font-size:1.1rem; align-items:center;">
-        <i class="fa-solid fa-image" title="Changer le fond" style="cursor:pointer;" onclick="if(currentCircuitId) document.getElementById('bg-input').click()"></i>
+        <i class="fa-solid fa-image" title="Changer le fond du circuit" style="cursor:pointer;" onclick="if(currentCircuitId) document.getElementById('bg-input').click()"></i>
       </div>
       <!-- Inputs fichiers masqués -->
       <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="uploadBackground()">
@@ -413,7 +443,7 @@
       <div class="input-pill">
         <input type="text" id="msg-input" placeholder="Envoyer un message..." onkeypress="if(event.key === 'Enter') sendMessage()">
         <div class="input-pill-actions">
-          <i class="fa-solid fa-camera" onclick="if(currentCircuitId) document.getElementById('media-input').click()"></i>
+          <i class="fa-solid fa-camera" onclick="if(currentCircuitId || currentTargetUser) document.getElementById('media-input').click()"></i>
         </div>
       </div>
       <button class="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
@@ -423,7 +453,9 @@
   <script>
     const socket = io();
     let currentCircuitId = null;
+    let currentTargetUser = null;
     let currentUsername = "";
+    let activeTab = 'circuits';
 
     async function login() {
       const u = document.getElementById('auth-username').value.trim();
@@ -442,6 +474,7 @@
         document.getElementById('my-username').innerText = currentUsername;
         document.getElementById('my-avatar').src = data.user.avatar_url || '/static/default_avatar.png';
         loadCircuits();
+        loadDirectUsers();
       } else {
         alert(data.error || "Erreur de connexion");
       }
@@ -464,6 +497,15 @@
       }
     }
 
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById('tab-circuits').classList.toggle('active', tab === 'circuits');
+      document.getElementById('tab-directs').classList.toggle('active', tab === 'directs');
+      
+      document.getElementById('circuits-container').style.display = tab === 'circuits' ? 'block' : 'none';
+      document.getElementById('users-container').style.display = tab === 'directs' ? 'block' : 'none';
+    }
+
     async function loadCircuits() {
       const res = await fetch('/api/my-circuits');
       if (!res.ok) return;
@@ -475,7 +517,7 @@
         const item = document.createElement('div');
         item.id = `circuit-item-${c.id}`;
         item.className = `chat-item ${currentCircuitId === c.id ? 'active' : ''}`;
-        item.onclick = () => selectCircuit(c.id, c.name, c.code, c.background_url, c.icon_url, item);
+        item.onclick = () => selectCircuit(c.id, c.name, c.code, c.icon_url, item);
         item.innerHTML = `
           <img src="${c.icon_url || '/static/default_avatar.png'}" class="chat-item-avatar" id="circuit-img-${c.id}">
           <div class="chat-item-info">
@@ -485,11 +527,149 @@
         `;
         container.appendChild(item);
 
-        // Sur PC uniquement : Sélection automatique du premier circuit au démarrage
-        if (index === 0 && !currentCircuitId && window.innerWidth > 768) {
-          selectCircuit(c.id, c.name, c.code, c.background_url, c.icon_url, item);
+        if (index === 0 && !currentCircuitId && !currentTargetUser && window.innerWidth > 768) {
+          selectCircuit(c.id, c.name, c.code, c.icon_url, item);
         }
       });
+    }
+
+    async function loadDirectUsers() {
+      const res = await fetch('/api/users');
+      if (!res.ok) return;
+      const users = await res.json();
+      const container = document.getElementById('users-container');
+      container.innerHTML = '';
+
+      users.forEach(u => {
+        const item = document.createElement('div');
+        item.className = `chat-item ${currentTargetUser === u.username ? 'active' : ''}`;
+        item.onclick = () => selectDirectUser(u.username, u.avatar_url, item);
+        item.innerHTML = `
+          <img src="${u.avatar_url || '/static/default_avatar.png'}" class="chat-item-avatar">
+          <div class="chat-item-info">
+            <div class="chat-item-name">${u.username}</div>
+            <div class="chat-item-sub"><i class="fa-solid fa-lock" style="font-size:9px;"></i> Chat privé Snapchat/WhatsApp</div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function selectCircuit(id, name, code, iconUrl, element) {
+      if (currentCircuitId) socket.emit('leave_circuit', { circuit_id: currentCircuitId });
+      currentCircuitId = id;
+      currentTargetUser = null;
+
+      document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+      if (element) element.classList.add('active');
+
+      document.getElementById('chat-title').innerText = name;
+      document.getElementById('chat-subtitle').innerText = `Code invitation: ${code}`;
+      document.getElementById('chat-header-img').src = iconUrl || '/static/default_avatar.png';
+      document.getElementById('messages').innerHTML = '';
+
+      document.body.classList.add('chat-active');
+
+      socket.emit('join_circuit', { circuit_id: id });
+      loadMessages(id);
+      loadMembers(id);
+    }
+
+    async function selectDirectUser(username, avatarUrl, element) {
+      if (currentCircuitId) socket.emit('leave_circuit', { circuit_id: currentCircuitId });
+      currentCircuitId = null;
+      currentTargetUser = username;
+
+      document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+      if (element) element.classList.add('active');
+
+      document.getElementById('chat-title').innerText = `@${username}`;
+      document.getElementById('chat-subtitle').innerText = `Discussion privée cryptée`;
+      document.getElementById('chat-header-img').src = avatarUrl || '/static/default_avatar.png';
+      document.getElementById('messages').innerHTML = '';
+
+      document.body.classList.add('chat-active');
+
+      socket.emit('join_private_chat', { target_user: username });
+      loadPrivateMessages(username);
+    }
+
+    function closeChatMobile() {
+      document.body.classList.remove('chat-active');
+    }
+
+    async function loadMessages(circuitId) {
+      const res = await fetch(`/api/circuit/${circuitId}/messages`);
+      if (!res.ok) return;
+      const messages = await res.json();
+      messages.forEach(msg => renderSingleMessage(msg));
+    }
+
+    async function loadPrivateMessages(targetUser) {
+      const res = await fetch(`/api/private-messages/${targetUser}`);
+      if (!res.ok) return;
+      const messages = await res.json();
+      messages.forEach(msg => renderSingleMessage(msg));
+    }
+
+    async function loadMembers(circuitId) {
+      const res = await fetch(`/api/circuit/${circuitId}/members`);
+      if (!res.ok) return;
+      const members = await res.json();
+
+      const storiesContainer = document.getElementById('stories-container');
+      storiesContainer.innerHTML = members.map(m => `
+        <div class="story-item" title="${m.username}" onclick="switchTab('directs'); selectDirectUser('${m.username}', '${m.avatar_url}')">
+          <div class="story-avatar-frame ${m.is_online ? 'online' : ''}">
+            <img src="${m.avatar_url || '/static/default_avatar.png'}">
+          </div>
+          <span class="story-name">${m.username}</span>
+        </div>
+      `).join('');
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('msg-input');
+      const content = input.value.trim();
+      if (!content) return;
+
+      if (currentCircuitId) {
+        socket.emit('send_message', { circuit_id: currentCircuitId, content: content });
+      } else if (currentTargetUser) {
+        socket.emit('send_private_message', { target_user: currentTargetUser, content: content });
+      }
+      input.value = '';
+    }
+
+    async function sendMedia() {
+      const fileInput = document.getElementById('media-input');
+      if (!fileInput.files[0]) return;
+      const formData = new FormData();
+      formData.append('media', fileInput.files[0]);
+      const res = await fetch('/api/upload-media', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        if (currentCircuitId) {
+          socket.emit('send_message', { circuit_id: currentCircuitId, media_url: data.media_url });
+        } else if (currentTargetUser) {
+          socket.emit('send_private_message', { target_user: currentTargetUser, media_url: data.media_url });
+        }
+        fileInput.value = '';
+      }
+    }
+
+    async function uploadAvatar() {
+      const fileInput = document.getElementById('avatar-input');
+      if (!fileInput.files[0]) return;
+      const formData = new FormData();
+      formData.append('avatar', fileInput.files[0]);
+      const res = await fetch('/api/upload-avatar', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('my-avatar').src = data.avatar_url;
+        if (currentCircuitId) loadMembers(currentCircuitId);
+        loadDirectUsers();
+      }
     }
 
     async function createCircuit() {
@@ -519,102 +699,12 @@
       }
     }
 
-    async function selectCircuit(id, name, code, bgUrl, iconUrl, element) {
-      if (currentCircuitId) socket.emit('leave_circuit', { circuit_id: currentCircuitId });
-      currentCircuitId = id;
-
-      document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-      if (element) element.classList.add('active');
-
-      document.getElementById('chat-title').innerText = name;
-      document.getElementById('chat-subtitle').innerText = `Code invitation: ${code}`;
-      document.getElementById('chat-header-img').src = iconUrl || '/static/default_avatar.png';
-      document.getElementById('messages').innerHTML = '';
-
-      applyBackground(bgUrl);
-
-      // Activer l'affichage mobile du chat
-      document.body.classList.add('chat-active');
-
-      socket.emit('join_circuit', { circuit_id: id });
-      loadMessages(id);
-      loadMembers(id);
-    }
-
-    function closeChatMobile() {
-      document.body.classList.remove('chat-active');
-    }
-
-    function applyBackground(url) {
-      const chatArea = document.getElementById('chat-area');
-      const validUrl = (url && url !== "null") ? url : '/static/bg-pirate.jpg';
-      chatArea.style.backgroundImage = `linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.8)), url('${validUrl}')`;
-    }
-
-    async function loadMessages(circuitId) {
-      const res = await fetch(`/api/circuit/${circuitId}/messages`);
-      if (!res.ok) return;
-      const messages = await res.json();
-      messages.forEach(msg => renderSingleMessage(msg));
-    }
-
-    async function loadMembers(circuitId) {
-      const res = await fetch(`/api/circuit/${circuitId}/members`);
-      if (!res.ok) return;
-      const members = await res.json();
-
-      const storiesContainer = document.getElementById('stories-container');
-      storiesContainer.innerHTML = members.map(m => `
-        <div class="story-item" title="${m.username}">
-          <div class="story-avatar-frame ${m.is_online ? 'online' : ''}">
-            <img src="${m.avatar_url || '/static/default_avatar.png'}">
-          </div>
-          <span class="story-name">${m.username}</span>
-        </div>
-      `).join('');
-    }
-
-    function sendMessage() {
-      const input = document.getElementById('msg-input');
-      if (!input.value.trim() || !currentCircuitId) return;
-      socket.emit('send_message', { circuit_id: currentCircuitId, content: input.value.trim() });
-      input.value = '';
-    }
-
-    async function sendMedia() {
-      const fileInput = document.getElementById('media-input');
-      if (!fileInput.files[0] || !currentCircuitId) return;
-      const formData = new FormData();
-      formData.append('media', fileInput.files[0]);
-      const res = await fetch('/api/upload-media', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        socket.emit('send_message', { circuit_id: currentCircuitId, media_url: data.media_url });
-        fileInput.value = '';
-      }
-    }
-
-    async function uploadAvatar() {
-      const fileInput = document.getElementById('avatar-input');
-      if (!fileInput.files[0]) return;
-      const formData = new FormData();
-      formData.append('avatar', fileInput.files[0]);
-      const res = await fetch('/api/upload-avatar', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        document.getElementById('my-avatar').src = data.avatar_url;
-        if (currentCircuitId) loadMembers(currentCircuitId);
-      }
-    }
-
     async function uploadBackground() {
       const fileInput = document.getElementById('bg-input');
       if (!fileInput.files[0] || !currentCircuitId) return;
       const formData = new FormData();
       formData.append('background', fileInput.files[0]);
-      const res = await fetch(`/api/circuit/${currentCircuitId}/upload-background`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok) applyBackground(data.background_url);
+      await fetch(`/api/circuit/${currentCircuitId}/upload-background`, { method: 'POST', body: formData });
     }
 
     async function uploadCircuitIcon() {
@@ -653,15 +743,9 @@
       if (data.circuit_id == currentCircuitId) renderSingleMessage(data);
     });
 
-    socket.on('background_updated', data => {
-      if (data.circuit_id == currentCircuitId) applyBackground(data.background_url);
-    });
-
-    socket.on('circuit_icon_updated', data => {
-      const sidebarImg = document.getElementById(`circuit-img-${data.circuit_id}`);
-      if (sidebarImg) sidebarImg.src = data.icon_url;
-      if (data.circuit_id == currentCircuitId) {
-        document.getElementById('chat-header-img').src = data.icon_url;
+    socket.on('new_private_message', data => {
+      if (currentTargetUser && (data.sender === currentTargetUser || data.sender === currentUsername)) {
+        renderSingleMessage(data);
       }
     });
 
