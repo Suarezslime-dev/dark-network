@@ -36,7 +36,6 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.3); border-radius: 4px; }
 
-    /* SIDEBAR */
     #sidebar { 
       width: 340px; 
       background-color: var(--bg-sidebar); 
@@ -45,7 +44,6 @@
       display: flex; 
       flex-direction: column;
       z-index: 10;
-      transition: transform 0.3s ease-in-out;
       flex-shrink: 0;
     }
 
@@ -56,280 +54,67 @@
       justify-content: space-between;
       border-bottom: 1px solid var(--border-color);
     }
-    .user-profile-btn {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-    }
+    .user-profile-btn { display: flex; align-items: center; gap: 10px; cursor: pointer; }
     .user-profile-btn img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 2px solid var(--neon-blue);
-      box-shadow: 0 0 10px var(--neon-glow);
-      object-fit: cover;
+      width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--neon-blue);
+      box-shadow: 0 0 10px var(--neon-glow); object-fit: cover;
     }
 
-    .chat-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border-color);
-      background: rgba(5, 7, 12, 0.4);
-    }
+    .chat-tabs { display: flex; border-bottom: 1px solid var(--border-color); background: rgba(5, 7, 12, 0.4); }
     .tab-btn {
-      flex: 1;
-      padding: 12px;
-      text-align: center;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+      flex: 1; padding: 12px; text-align: center; background: transparent; border: none;
+      color: var(--text-muted); font-size: 0.85rem; font-weight: 600; cursor: pointer;
     }
-    .tab-btn.active {
-      color: var(--neon-blue);
-      border-bottom: 2px solid var(--neon-blue);
-      background: rgba(0, 210, 255, 0.08);
-    }
+    .tab-btn.active { color: var(--neon-blue); border-bottom: 2px solid var(--neon-blue); background: rgba(0, 210, 255, 0.08); }
 
-    .requests-panel {
-      background: rgba(0, 210, 255, 0.08);
-      border-bottom: 1px solid var(--border-color);
-      padding: 8px 12px;
-      max-height: 120px;
-      overflow-y: auto;
-    }
-    .request-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 0;
-      font-size: 0.8rem;
-    }
+    .requests-panel { background: rgba(0, 210, 255, 0.08); border-bottom: 1px solid var(--border-color); padding: 8px 12px; max-height: 120px; overflow-y: auto; }
+    .request-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 0.8rem; }
     .btn-accept { background: var(--neon-blue); color: #000; border: none; padding: 4px 10px; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-    .search-box {
-      padding: 10px 16px;
-      position: relative;
-    }
+    .search-box { padding: 10px 16px; position: relative; }
     .search-box input {
-      width: 100%;
-      padding: 8px 12px 8px 34px;
-      background: rgba(15, 21, 31, 0.7);
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
-      color: var(--text-main);
-      font-size: 0.85rem;
-      outline: none;
+      width: 100%; padding: 8px 12px 8px 34px; background: rgba(15, 21, 31, 0.7);
+      border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-main); font-size: 0.85rem; outline: none;
     }
-    .search-box i {
-      position: absolute;
-      left: 28px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      font-size: 0.8rem;
-    }
+    .search-box i { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem; }
 
-    .stories-bar {
-      display: flex;
-      gap: 12px;
-      padding: 10px 16px 15px;
-      overflow-x: auto;
-      border-bottom: 1px solid var(--border-color);
-    }
-    .story-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      min-width: 58px;
-    }
-    .story-avatar-frame {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      padding: 2px;
-      border: 2px solid var(--border-color);
-      transition: all 0.3s;
-    }
-    .story-avatar-frame.online {
-      border-color: var(--neon-blue);
-      box-shadow: 0 0 8px var(--neon-glow);
-    }
-    .story-avatar-frame img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .story-name {
-      font-size: 10px;
-      color: var(--text-muted);
-      max-width: 58px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: center;
-    }
+    .stories-bar { display: flex; gap: 12px; padding: 10px 16px 15px; overflow-x: auto; border-bottom: 1px solid var(--border-color); }
+    .story-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; min-width: 58px; }
+    .story-avatar-frame { width: 52px; height: 52px; border-radius: 50%; padding: 2px; border: 2px solid var(--border-color); }
+    .story-avatar-frame.online { border-color: var(--neon-blue); box-shadow: 0 0 8px var(--neon-glow); }
+    .story-avatar-frame img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .story-name { font-size: 10px; color: var(--text-muted); max-width: 58px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .chat-list { flex: 1; overflow-y: auto; }
-    .chat-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-    }
-    .chat-item:hover, .chat-item.active {
-      background-color: var(--bg-card);
-      border-left: 3px solid var(--neon-blue);
-    }
-    .chat-item-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1px solid var(--border-color);
-    }
+    .chat-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .chat-item:hover, .chat-item.active { background-color: var(--bg-card); border-left: 3px solid var(--neon-blue); }
+    .chat-item-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); }
     .chat-item-info { flex: 1; overflow: hidden; }
     .chat-item-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-item-sub { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 2px; }
 
-    /* CHAT AREA */
-    #chat-area { 
-      flex: 1; 
-      display: flex; 
-      flex-direction: column; 
-      position: relative; 
-      background: transparent;
-      width: 100%;
-    }
-
-    .chat-header {
-      padding: 12px 16px;
-      background: rgba(12, 16, 24, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    #chat-area { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; }
+    .chat-header { padding: 12px 16px; background: rgba(12, 16, 24, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
     .chat-header-user { display: flex; align-items: center; gap: 12px; }
-    .chat-header-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--neon-blue);
-    }
-
+    .chat-header-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon-blue); }
     .back-btn { display: none; background: transparent; border: none; color: var(--neon-blue); font-size: 1.2rem; cursor: pointer; padding-right: 8px; }
 
-    #messages { 
-      flex: 1; 
-      padding: 20px; 
-      overflow-y: auto; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 14px; 
-    }
-    
+    #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
     .message { display: flex; gap: 10px; max-width: 75%; align-items: flex-end; align-self: flex-start; }
     .message.me { align-self: flex-end; flex-direction: row-reverse; }
-    .msg-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color); }
-    
-    .message-content { 
-      background: rgba(15, 21, 32, 0.88); 
-      padding: 12px 16px; 
-      border-radius: 18px 18px 18px 4px; 
-      font-size: 0.92rem; 
-      border: 1px solid var(--border-color); 
-      backdrop-filter: blur(10px);
-      color: var(--text-main);
-      word-break: break-word;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      line-height: 1.4;
-    }
-    .message.me .message-content { 
-      background: linear-gradient(135deg, #00b4db, #00d2ff); 
-      color: #05080e;
-      font-weight: 600;
-      border-radius: 18px 18px 4px 18px;
-      border: none;
-      box-shadow: 0 4px 15px rgba(0, 210, 255, 0.25);
-    }
+    .msg-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); }
+    .message-content { background: rgba(15, 21, 32, 0.88); padding: 12px 16px; border-radius: 18px 18px 18px 4px; font-size: 0.92rem; border: 1px solid var(--border-color); color: var(--text-main); word-break: break-word; }
+    .message.me .message-content { background: linear-gradient(135deg, #00b4db, #00d2ff); color: #05080e; font-weight: 600; border-radius: 18px 18px 4px 18px; border: none; }
     .sender-name { font-size: 0.72rem; color: var(--neon-blue); margin-bottom: 4px; font-weight: 600; font-family: 'Fira Code', monospace; }
-    .message.me .sender-name { display: none; }
 
-    .chat-input-bar { 
-      padding: 14px 18px; 
-      display: flex; 
-      gap: 12px; 
-      align-items: center; 
-      background: rgba(12, 16, 24, 0.88);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid var(--border-color);
-    }
-    
-    .input-pill {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      background: rgba(6, 9, 14, 0.85);
-      border: 1px solid var(--border-color);
-      border-radius: 25px;
-      padding: 4px 16px;
-    }
-    .input-pill input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--text-main);
-      padding: 10px 0;
-      outline: none;
-      font-size: 0.92rem;
-      width: 100%;
-    }
-    .input-pill-actions { display: flex; gap: 12px; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; }
-    .input-pill-actions i:hover { color: var(--neon-blue); }
+    .chat-input-bar { padding: 14px 18px; display: flex; gap: 12px; align-items: center; background: rgba(12, 16, 24, 0.88); border-top: 1px solid var(--border-color); }
+    .input-pill { flex: 1; display: flex; align-items: center; background: rgba(6, 9, 14, 0.85); border: 1px solid var(--border-color); border-radius: 25px; padding: 4px 16px; }
+    .input-pill input { flex: 1; background: transparent; border: none; color: var(--text-main); padding: 10px 0; outline: none; font-size: 0.92rem; }
+    .send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--neon-blue); border: none; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-    .send-btn {
-      width: 42px; height: 42px; border-radius: 50%; background: var(--neon-blue); border: none; color: #000;
-      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.2s;
-    }
-    .send-btn:hover { transform: scale(1.06); box-shadow: 0 0 12px var(--neon-glow); }
-
-    /* AUTH OVERLAY */
-    #auth-overlay { 
-      position: fixed; 
-      inset: 0; 
-      background: rgba(5, 7, 10, 0.45); 
-      backdrop-filter: blur(8px); 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      z-index: 1000; 
-      padding: 20px; 
-    }
-    .auth-box { 
-      background: var(--bg-sidebar); 
-      padding: 28px; 
-      border-radius: 20px; 
-      width: 100%; 
-      max-width: 350px; 
-      border: 1px solid var(--border-color); 
-      display: flex; 
-      flex-direction: column; 
-      gap: 16px; 
-      box-shadow: 0 0 25px rgba(0, 210, 255, 0.15); 
-    }
-    .auth-box input { padding: 12px 16px; background: rgba(5, 7, 10, 0.8); border: 1px solid var(--border-color); color: #fff; border-radius: 10px; outline: none; }
+    #auth-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .auth-box { background: var(--bg-sidebar); padding: 28px; border-radius: 20px; width: 100%; max-width: 350px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 16px; }
+    .auth-box input { padding: 12px; background: rgba(5, 7, 10, 0.8); border: 1px solid var(--border-color); color: #fff; border-radius: 10px; outline: none; }
     .auth-box button { padding: 12px; background: var(--neon-blue); border: none; font-weight: bold; border-radius: 10px; cursor: pointer; color: #000; }
 
     @media (max-width: 768px) {
@@ -338,27 +123,24 @@
       body.chat-active #sidebar { display: none; }
       body.chat-active #chat-area { display: flex; }
       .back-btn { display: block; }
-      .message { max-width: 88%; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Overlay d'Authentification -->
   <div id="auth-overlay">
     <div class="auth-box">
-      <h3 style="color:var(--neon-blue); text-align:center; font-family:'Fira Code'; font-size:1.3rem;">// DARK NETWORK</h3>
+      <h3 style="color:var(--neon-blue); text-align:center; font-family:'Fira Code';">// DARK NETWORK</h3>
       <input type="text" id="auth-username" placeholder="Pseudo">
       <input type="password" id="auth-password" placeholder="Mot de passe">
       <button onclick="login()">Se Connecter</button>
-      <button onclick="register()" style="background:transparent; color:#fff; border:1px solid var(--border-color);">Créer Identifiant</button>
+      <button onclick="register()" style="background:transparent; color:#fff; border:1px solid var(--border-color);">Créer un compte</button>
     </div>
   </div>
 
-  <!-- Sidebar -->
   <div id="sidebar">
     <div class="sidebar-top">
-      <div class="user-profile-btn" onclick="document.getElementById('avatar-input').click()" title="Changer la photo">
+      <div class="user-profile-btn" onclick="document.getElementById('avatar-input').click()">
         <img id="my-avatar" src="/static/default_avatar.png">
         <div>
           <div id="my-username" style="font-size:0.9rem; font-weight:bold;">Anonyme</div>
@@ -367,26 +149,24 @@
       </div>
       <div style="display:flex; gap:6px;">
         <button onclick="sendFriendRequestPrompt()" style="background:transparent; border:1px solid var(--neon-blue); color:var(--neon-blue); padding:5px 8px; border-radius:12px; font-size:10px; cursor:pointer;">+ Demande</button>
-        <button onclick="logout()" style="background:rgba(255, 50, 50, 0.2); border:1px solid #ff4444; color:#ff4444; padding:5px 8px; border-radius:12px; font-size:10px; cursor:pointer;" title="Déconnexion"><i class="fa-solid fa-power-off"></i></button>
+        <button onclick="logout()" style="background:rgba(255, 50, 50, 0.2); border:1px solid #ff4444; color:#ff4444; padding:5px 8px; border-radius:12px; font-size:10px; cursor:pointer;"><i class="fa-solid fa-power-off"></i></button>
       </div>
       <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar()">
     </div>
 
-    <!-- Demandes d'amis -->
     <div id="requests-panel" class="requests-panel" style="display:none;">
-      <div style="font-size:11px; color:var(--neon-blue); font-weight:bold; margin-bottom:4px;">DEMANDES D'AMIS REÇUES</div>
+      <div style="font-size:11px; color:var(--neon-blue); font-weight:bold; margin-bottom:4px;">DEMANDES D'AMIS</div>
       <div id="requests-list"></div>
     </div>
 
-    <!-- Onglets -->
     <div class="chat-tabs">
       <button class="tab-btn active" id="tab-circuits" onclick="switchTab('circuits')"><i class="fa-solid fa-layer-group"></i> Circuits</button>
-      <button class="tab-btn" id="tab-directs" onclick="switchTab('directs')"><i class="fa-solid fa-user-check"></i> Mes Amis (MP)</button>
+      <button class="tab-btn" id="tab-directs" onclick="switchTab('directs')"><i class="fa-solid fa-user-check"></i> Amis (MP)</button>
     </div>
 
     <div class="search-box">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="join-code" placeholder="Code d'invitation..." onkeypress="if(event.key==='Enter') joinCircuit()">
+      <input type="text" id="join-code" placeholder="Code invitation..." onkeypress="if(event.key==='Enter') joinCircuit()">
     </div>
 
     <div class="stories-bar" id="stories-container"></div>
@@ -394,15 +174,14 @@
     <div class="chat-list" id="users-container" style="display:none;"></div>
   </div>
 
-  <!-- Chat Area -->
   <div id="chat-area">
     <div class="chat-header">
       <div class="chat-header-user">
         <button class="back-btn" onclick="closeChatMobile()"><i class="fa-solid fa-arrow-left"></i></button>
         <img id="chat-header-img" src="/static/default_avatar.png" class="chat-header-avatar">
         <div>
-          <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez une discussion</div>
-          <div id="chat-subtitle" style="font-size:11px; color:var(--text-muted);">Canal sécurisé</div>
+          <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez un canal</div>
+          <div id="chat-subtitle" style="font-size:11px; color:var(--text-muted);">Canal chiffré</div>
         </div>
       </div>
     </div>
@@ -412,10 +191,8 @@
     <div class="chat-input-bar">
       <input type="file" id="media-input" accept="image/*" style="display:none" onchange="sendMedia()">
       <div class="input-pill">
-        <input type="text" id="msg-input" placeholder="Envoyer un message..." onkeypress="if(event.key === 'Enter') sendMessage()">
-        <div class="input-pill-actions">
-          <i class="fa-solid fa-camera" onclick="if(currentCircuitId || currentTargetUser) document.getElementById('media-input').click()"></i>
-        </div>
+        <input type="text" id="msg-input" placeholder="Message..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <i class="fa-solid fa-camera" style="color:var(--text-muted); cursor:pointer;" onclick="if(currentCircuitId || currentTargetUser) document.getElementById('media-input').click()"></i>
       </div>
       <button class="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
@@ -470,19 +247,6 @@
       }
     }
 
-    async function logout() {
-      try {
-        await fetch('/api/logout', { 
-          method: 'POST',
-          headers: { 'X-Username': currentUsername }
-        });
-      } catch (e) {
-        console.error("Erreur lors de la déconnexion", e);
-      }
-      localStorage.removeItem('circuit_user');
-      location.reload();
-    }
-
     async function register() {
       const u = document.getElementById('auth-username').value.trim();
       const p = document.getElementById('auth-password').value.trim();
@@ -496,8 +260,14 @@
       if (res.ok) login();
       else {
         const data = await res.json();
-        alert(data.error || "Erreur de création");
+        alert(data.error || "Erreur lors de l'inscription");
       }
+    }
+
+    async function logout() {
+      await fetch('/api/logout', { method: 'POST', headers: { 'X-Username': currentUsername } });
+      localStorage.removeItem('circuit_user');
+      location.reload();
     }
 
     function switchTab(tab) {
@@ -508,15 +278,12 @@
     }
 
     async function sendFriendRequestPrompt() {
-      const target = prompt("Entrez le pseudo de la personne :");
+      const target = prompt("Pseudo de votre ami :");
       if (!target || !target.trim()) return;
 
       const res = await fetch('/api/friends/send-request', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Username': currentUsername
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Username': currentUsername },
         body: JSON.stringify({target_user: target.trim()})
       });
       const data = await res.json();
@@ -524,9 +291,7 @@
     }
 
     async function loadFriendRequests() {
-      const res = await fetch('/api/friends/requests', {
-        headers: { 'X-Username': currentUsername }
-      });
+      const res = await fetch('/api/friends/requests', { headers: { 'X-Username': currentUsername } });
       if (!res.ok) return;
       const requests = await res.json();
       const panel = document.getElementById('requests-panel');
@@ -537,7 +302,7 @@
       panel.style.display = 'block';
       container.innerHTML = requests.map(r => `
         <div class="request-item">
-          <span><b>${r.username}</b> veut être votre ami</span>
+          <span><b>${r.username}</b></span>
           <button class="btn-accept" onclick="acceptFriendRequest('${r.username}')">Accepter</button>
         </div>
       `).join('');
@@ -546,28 +311,18 @@
     async function acceptFriendRequest(sender) {
       const res = await fetch('/api/friends/accept-request', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Username': currentUsername
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Username': currentUsername },
         body: JSON.stringify({sender: sender})
       });
       if (res.ok) { loadFriendRequests(); loadFriends(); }
     }
 
     async function loadFriends() {
-      const res = await fetch('/api/friends/list', {
-        headers: { 'X-Username': currentUsername }
-      });
+      const res = await fetch('/api/friends/list', { headers: { 'X-Username': currentUsername } });
       if (!res.ok) return;
       const friends = await res.json();
       const container = document.getElementById('users-container');
       container.innerHTML = '';
-
-      if (friends.length === 0) {
-        container.innerHTML = `<div style="padding:15px; font-size:0.8rem; color:var(--text-muted);">Aucun ami. Cliquez sur "+ Demande".</div>`;
-        return;
-      }
 
       friends.forEach(u => {
         const item = document.createElement('div');
@@ -577,7 +332,7 @@
           <img src="${u.avatar_url || '/static/default_avatar.png'}" class="chat-item-avatar">
           <div class="chat-item-info">
             <div class="chat-item-name">${u.username}</div>
-            <div class="chat-item-sub"><i class="fa-solid fa-lock" style="font-size:9px;"></i> Chat privé</div>
+            <div class="chat-item-sub"><i class="fa-solid fa-lock" style="font-size:9px;"></i> ${u.last_message}</div>
           </div>
         `;
         container.appendChild(item);
@@ -585,9 +340,7 @@
     }
 
     async function loadCircuits() {
-      const res = await fetch('/api/my-circuits', {
-        headers: { 'X-Username': currentUsername }
-      });
+      const res = await fetch('/api/my-circuits', { headers: { 'X-Username': currentUsername } });
       if (!res.ok) return;
       const circuits = await res.json();
       const container = document.getElementById('circuits-container');
@@ -595,8 +348,9 @@
 
       circuits.forEach((c, index) => {
         const item = document.createElement('div');
-        item.className = `chat-item ${currentCircuitId === c.id ? 'active' : ''}`;
-        item.onclick = () => selectCircuit(c.id, c.name, c.code, c.icon_url, item);
+        const cIdStr = String(c.id);
+        item.className = `chat-item ${currentCircuitId === cIdStr ? 'active' : ''}`;
+        item.onclick = () => selectCircuit(cIdStr, c.name, c.code, c.icon_url, item);
         item.innerHTML = `
           <img src="${c.icon_url || '/static/default_avatar.png'}" class="chat-item-avatar">
           <div class="chat-item-info">
@@ -607,7 +361,7 @@
         container.appendChild(item);
 
         if (index === 0 && !currentCircuitId && !currentTargetUser && window.innerWidth > 768) {
-          selectCircuit(c.id, c.name, c.code, c.icon_url, item);
+          selectCircuit(cIdStr, c.name, c.code, c.icon_url, item);
         }
       });
     }
@@ -619,10 +373,7 @@
 
       const res = await fetch('/api/circuit/join', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Username': currentUsername
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Username': currentUsername },
         body: JSON.stringify({ invite_code: code })
       });
 
@@ -630,15 +381,15 @@
       if (res.ok) {
         codeInput.value = '';
         loadCircuits();
-        selectCircuit(data.circuit.id, data.circuit.name, data.circuit.code, data.circuit.icon_url);
+        selectCircuit(String(data.circuit.id), data.circuit.name, data.circuit.code, data.circuit.icon_url);
       } else {
-        alert(data.error || "Impossible de rejoindre ce circuit.");
+        alert(data.error || "Code d'invitation invalide.");
       }
     }
 
     async function selectCircuit(id, name, code, iconUrl, element) {
       if (currentCircuitId) socket.emit('leave_circuit', { circuit_id: currentCircuitId });
-      currentCircuitId = id;
+      currentCircuitId = String(id);
       currentTargetUser = null;
 
       document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
@@ -650,9 +401,9 @@
       document.getElementById('messages').innerHTML = '';
 
       document.body.classList.add('chat-active');
-      socket.emit('join_circuit', { circuit_id: id });
-      loadMessages(id);
-      loadMembers(id);
+      socket.emit('join_circuit', { circuit_id: currentCircuitId });
+      loadMessages(currentCircuitId);
+      loadMembers(currentCircuitId);
     }
 
     async function selectDirectUser(username, avatarUrl, element) {
@@ -664,7 +415,7 @@
       if (element) element.classList.add('active');
 
       document.getElementById('chat-title').innerText = `@${username}`;
-      document.getElementById('chat-subtitle').innerText = `Chat privé (Ami vérifié)`;
+      document.getElementById('chat-subtitle').innerText = `Discussion privée`;
       document.getElementById('chat-header-img').src = avatarUrl || '/static/default_avatar.png';
       document.getElementById('messages').innerHTML = '';
 
@@ -683,9 +434,7 @@
     }
 
     async function loadPrivateMessages(targetUser) {
-      const res = await fetch(`/api/private-messages/${targetUser}`, {
-        headers: { 'X-Username': currentUsername }
-      });
+      const res = await fetch(`/api/private-messages/${targetUser}`, { headers: { 'X-Username': currentUsername } });
       if (!res.ok) return;
       const messages = await res.json();
       messages.forEach(msg => renderSingleMessage(msg));
@@ -750,11 +499,9 @@
       const data = await res.json();
       if (res.ok) {
         document.getElementById('my-avatar').src = data.avatar_url;
-        
         const userObj = JSON.parse(localStorage.getItem('circuit_user') || '{}');
         userObj.avatar_url = data.avatar_url;
         localStorage.setItem('circuit_user', JSON.stringify(userObj));
-
         if (currentCircuitId) loadMembers(currentCircuitId);
         loadFriends();
       }
@@ -769,7 +516,7 @@
         <div class="message-content">
           ${!isMe ? `<div class="sender-name">${data.sender}</div>` : ''}
           ${data.content ? `<div>${data.content}</div>` : ''}
-          ${data.media_url ? `<img src="${data.media_url}" style="max-width:100%; max-height:250px; border-radius:12px; margin-top:5px; display:block; object-fit:cover;">` : ''}
+          ${data.media_url ? `<img src="${data.media_url}" style="max-width:100%; max-height:250px; border-radius:12px; margin-top:5px; display:block;">` : ''}
         </div>
       `;
       const messagesContainer = document.getElementById('messages');
@@ -777,9 +524,8 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // GESTION DES WEBSOCKETS
     socket.on('new_message', data => {
-      if (data.circuit_id == currentCircuitId) renderSingleMessage(data);
+      if (String(data.circuit_id) === String(currentCircuitId)) renderSingleMessage(data);
     });
 
     socket.on('new_private_message', data => {
