@@ -36,6 +36,7 @@ def save_db(data):
 
 db = load_db()
 
+# Initialisation du circuit général
 if "1" not in db["circuits"]:
     db["circuits"]["1"] = {
         "id": "1",
@@ -46,7 +47,6 @@ if "1" not in db["circuits"]:
     save_db(db)
 
 def get_current_user():
-    # Priorité : En-tête JS X-Username > Session Flask
     user = request.headers.get('X-Username') or session.get('username')
     return user if user and user in db["users"] else None
 
@@ -86,6 +86,7 @@ def login():
     session['username'] = username
     session.permanent = True
 
+    # S'assurer que les clés existent
     db["users"][username].setdefault("friends", [])
     db["users"][username].setdefault("friend_requests", [])
     save_db(db)
@@ -93,9 +94,9 @@ def login():
     return jsonify({
         "user": {
             "username": username,
-            "avatar_url": db["users"][username]["avatar_url"],
-            "friends": db["users"][username]["friends"],
-            "friend_requests": db["users"][username]["friend_requests"]
+            "avatar_url": db["users"][username].get("avatar_url", "/static/default_avatar.png"),
+            "friends": db["users"][username].get("friends", []),
+            "friend_requests": db["users"][username].get("friend_requests", [])
         }
     })
 
@@ -281,6 +282,11 @@ def handle_user_session(data=None):
 def handle_join(data):
     circuit_id = str(data.get('circuit_id'))
     join_room(circuit_id)
+
+@socketio.on('leave_circuit')
+def handle_leave(data):
+    circuit_id = str(data.get('circuit_id'))
+    leave_room(circuit_id)
 
 @socketio.on('join_private_chat')
 def handle_join_private(data):
