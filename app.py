@@ -2,6 +2,7 @@ import os
 import json
 import random
 import string
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from werkzeug.utils import secure_filename
@@ -15,6 +16,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 DB_FILE = os.path.join(app.root_path, 'database.json')
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
+
+# --- BASE DE DONNÉES PERSISTANTE ---
 
 def load_db():
     if os.path.exists(DB_FILE):
@@ -36,7 +39,7 @@ def save_db(data):
 
 db = load_db()
 
-# Initialisation du circuit général
+# Circuit général par défaut
 if "1" not in db["circuits"]:
     db["circuits"]["1"] = {
         "id": "1",
@@ -79,16 +82,18 @@ def login():
             "password": password,
             "avatar_url": "/static/default_avatar.png",
             "friends": [],
-            "friend_requests": []
+            "friend_requests": [],
+            "is_online": True,
+            "last_seen": datetime.now().strftime("%d/%m %H:%M")
         }
         save_db(db)
 
     session['username'] = username
     session.permanent = True
 
-    # S'assurer que les clés existent
     db["users"][username].setdefault("friends", [])
     db["users"][username].setdefault("friend_requests", [])
+    db["users"][username]["is_online"] = True
     save_db(db)
 
     return jsonify({
@@ -116,7 +121,9 @@ def register():
         "password": password,
         "avatar_url": "/static/default_avatar.png",
         "friends": [],
-        "friend_requests": []
+        "friend_requests": [],
+        "is_online": True,
+        "last_seen": datetime.now().strftime("%d/%m %H:%M")
     }
     save_db(db)
 
@@ -124,7 +131,7 @@ def register():
     session.permanent = True
     return jsonify({"success": True})
 
-# --- SYSTEME D'AMIS ---
+# --- SYSTEME D'AMIS (SNAPCHAT STYLE) ---
 
 @app.route('/api/friends/send-request', methods=['POST'])
 def send_friend_request():
@@ -189,13 +196,23 @@ def get_friends_list():
         return jsonify([]), 401
 
     friends_usernames = db["users"][username].get("friends", [])
-    friends_info = [
-        {
+    friends_info = []
+
+    for f in friends_usernames:
+        f_data = db["users"].get(f, {})
+        room_id = get_private_room_id(username, f)
+        last_msg_list = db["private_messages"].get(room_id, [])
+        last_msg = last_msg_list[-1] if last_msg_list else None
+
+        friends_info.append({
             "username": f,
-            "avatar_url": db["users"].get(f, {}).get("avatar_url", "/static/default_avatar.png")
-        }
-        for f in friends_usernames
-    ]
+            "avatar_url": f_data.get("avatar_url", "/static/default_avatar.png"),
+            "is_online": f_data.get("is_online", False),
+            "last_seen": f_data.get("last_seen", "Jamais"),
+            "last_message": last_msg.get("content", "Média") if last_msg else "Aucun message",
+            "last_time": last_msg.get("timestamp", "") if last_msg else ""
+        })
+
     return jsonify(friends_info)
 
 @app.route('/api/friends/requests', methods=['GET'])
@@ -220,6 +237,50 @@ def get_friend_requests():
 def get_circuits():
     return jsonify(list(db["circuits"].values()))
 
+@app.route('/api/circuit/create', methods=['POST'])
+def create_circuit():
+    username = get_current_user()
+    if not username:
+        return jsonify({"error": "Non autorisé"}), 401
+
+    data = request.json or {}
+    name = data.get('name', 'Nouveau Circuit').strip()
+    circuit_id = str(len(db["circuits"]) + 1)
+
+    circuit = {
+        "id": circuit_id,
+        "name": name,
+        "code": generate_code(),
+        "icon_url": "/static/default_avatar.png"
+    }
+
+    db["circuits"][circuit_id] = circuit
+    save_db(db)
+    return jsonify({"circuit": circuit})
+
+@app.route('/api/circuit/join', methods=['POST'])
+def join_circuit_code():
+    data = request.json or {}
+    code = data.get('invite_code', '').strip().upper()
+
+    for c_id, c in db["circuits"].items():
+        if c['code'] == code:
+            return jsonify({"success": True, "circuit": c})
+
+    return jsonify({"error": "Code invalide ou introuvable"}), 404
+
+@app.route('/api/circuit/<circuit_id>/members', methods=['GET'])
+def get_members(circuit_id):
+    members = [
+        {
+            "username": user,
+            "avatar_url": info.get("avatar_url", "/static/default_avatar.png"),
+            "is_online": info.get("is_online", False)
+        }
+        for user, info in db["users"].items()
+    ]
+    return jsonify(members)
+
 @app.route('/api/circuit/<circuit_id>/messages', methods=['GET'])
 def get_messages(circuit_id):
     return jsonify(db["messages"].get(circuit_id, []))
@@ -235,7 +296,19 @@ def get_private_messages(target_user):
         return jsonify({"error": "Vous devez être amis pour lire ces messages"}), 403
 
     room_id = get_private_room_id(username, target_user)
-    return jsonify(db["private_messages"].get(room_id, []))
+    msgs = db["private_messages"].get(room_id, [])
+
+    # Marquer les messages comme 'lus' (WhatsApp double check)
+    updated = False
+    for m in msgs:
+        if m.get("target") == username and not m.get("read"):
+            m["read"] = True
+            updated = True
+
+    if updated:
+        save_db(db)
+
+    return jsonify(msgs)
 
 # --- UPLOADS ---
 
@@ -268,15 +341,25 @@ def upload_media():
     file.save(filepath)
     return jsonify({"media_url": f"/static/uploads/{filename}"})
 
-# --- WEBSOCKETS ---
+# --- WEBSOCKETS EN TEMPS RÉEL ---
 
 @socketio.on('join_user_session')
 def handle_user_session(data=None):
     data = data or {}
     username = data.get('username') or session.get('username')
-    if username:
+    if username and username in db["users"]:
         session['username'] = username
+        db["users"][username]["is_online"] = True
+        save_db(db)
         join_room(username)
+        emit('user_status_change', {'username': username, 'is_online': True}, broadcast=True)
+
+@socketio.on('typing')
+def handle_typing(data):
+    target_user = data.get('target_user')
+    sender = session.get('username') or data.get('sender')
+    if target_user and sender:
+        emit('user_typing', {'sender': sender, 'is_typing': data.get('is_typing', False)}, room=target_user)
 
 @socketio.on('join_circuit')
 def handle_join(data):
@@ -302,13 +385,15 @@ def handle_message(data):
     circuit_id = str(data.get('circuit_id'))
     username = session.get('username') or data.get('sender', 'Anonyme')
     user_avatar = db["users"].get(username, {}).get('avatar_url', '/static/default_avatar.png')
+    now = datetime.now().strftime("%H:%M")
 
     msg = {
         "circuit_id": circuit_id,
         "sender": username,
         "content": data.get('content', ''),
         "media_url": data.get('media_url', None),
-        "avatar": user_avatar
+        "avatar": user_avatar,
+        "timestamp": now
     }
 
     if circuit_id not in db["messages"]:
@@ -333,13 +418,16 @@ def handle_private_message(data):
 
     room_id = get_private_room_id(sender, target_user)
     sender_avatar = db["users"].get(sender, {}).get('avatar_url', '/static/default_avatar.png')
+    now = datetime.now().strftime("%H:%M")
 
     msg = {
         "sender": sender,
         "target": target_user,
         "content": data.get('content', ''),
         "media_url": data.get('media_url', None),
-        "avatar": sender_avatar
+        "avatar": sender_avatar,
+        "timestamp": now,
+        "read": False
     }
 
     if room_id not in db["private_messages"]:
@@ -349,6 +437,13 @@ def handle_private_message(data):
     save_db(db)
 
     emit('new_private_message', msg, room=room_id)
+
+    emit('notification_new_message', {
+        'from': sender,
+        'content': data.get('content', 'A envoyé un média'),
+        'avatar': sender_avatar,
+        'timestamp': now
+    }, room=target_user)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
