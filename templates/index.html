@@ -70,7 +70,6 @@
       object-fit: cover;
     }
 
-    /* Onglets Tchats de groupe vs Messages Privés */
     .chat-tabs {
       display: flex;
       border-bottom: 1px solid var(--border-color);
@@ -93,6 +92,23 @@
       border-bottom: 2px solid var(--neon-blue);
       background: rgba(0, 210, 255, 0.05);
     }
+
+    /* ZONE NOTIFICATIONS & DEMANDES D'AMIS */
+    .requests-panel {
+      background: rgba(0, 210, 255, 0.05);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 12px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .request-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 0.8rem;
+    }
+    .btn-accept { background: var(--neon-blue); color: #000; border: none; padding: 4px 8px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
     .search-box {
       padding: 10px 16px;
@@ -203,13 +219,16 @@
       margin-top: 2px;
     }
 
-    /* ZONE DE CHAT PRINCIPALE */
+    /* ZONE DE CHAT PRINCIPALE ET ARRIÈRE-PLAN DYNAMIQUE */
     #chat-area { 
       flex: 1; 
       display: flex; 
       flex-direction: column; 
       position: relative; 
-      background: transparent;
+      background-image: linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.8)), url('/static/bg-pirate.jpg');
+      background-size: cover;
+      background-position: center;
+      transition: background-image 0.3s ease-in-out;
       width: 100%;
     }
 
@@ -235,9 +254,6 @@
       border: 1px solid var(--neon-blue);
       cursor: pointer;
       transition: transform 0.2s;
-    }
-    .chat-header-avatar:hover {
-      transform: scale(1.08);
     }
 
     .back-btn {
@@ -311,72 +327,30 @@
       font-size: 0.9rem;
       width: 100%;
     }
-    .input-pill-actions {
-      display: flex;
-      gap: 10px;
-      color: var(--text-muted);
-      font-size: 1.1rem;
-      cursor: pointer;
-    }
-    .input-pill-actions i:hover { color: var(--neon-blue); }
+    .input-pill-actions { display: flex; gap: 10px; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; }
 
     .send-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--neon-blue);
-      border: none;
-      color: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: transform 0.2s;
-      flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 50%; background: var(--neon-blue); border: none; color: #000;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
     }
-    .send-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px var(--neon-glow); }
 
-    /* MODAL / AUTH OVERLAY */
     #auth-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
     .auth-box { background: var(--bg-sidebar); padding: 25px; border-radius: 16px; width: 100%; max-width: 340px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 15px; }
-    .auth-box input { padding: 12px 14px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; outline: none; font-size: 0.9rem; }
+    .auth-box input { padding: 12px 14px; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; outline: none; }
     .auth-box button { padding: 12px; background: var(--neon-blue); border: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
 
-    /* RESPONSIVE DESIGN (MOBILES) */
     @media (max-width: 768px) {
-      #sidebar {
-        width: 100%;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-      }
-      #chat-area {
-        width: 100%;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        display: none;
-      }
-      body.chat-active #sidebar {
-        display: none;
-      }
-      body.chat-active #chat-area {
-        display: flex;
-      }
-      .back-btn {
-        display: block;
-      }
-      .message {
-        max-width: 90%;
-      }
+      #sidebar { width: 100%; position: absolute; top: 0; bottom: 0; left: 0; }
+      #chat-area { width: 100%; position: absolute; top: 0; bottom: 0; left: 0; display: none; }
+      body.chat-active #sidebar { display: none; }
+      body.chat-active #chat-area { display: flex; }
+      .back-btn { display: block; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Overlay Connexion / Inscription -->
+  <!-- Overlay Auth -->
   <div id="auth-overlay">
     <div class="auth-box">
       <h3 style="color:var(--neon-blue); text-align:center; font-family:'Fira Code';">// DARK NETWORK</h3>
@@ -387,24 +361,33 @@
     </div>
   </div>
 
-  <!-- Sidebar Gauche -->
+  <!-- Sidebar -->
   <div id="sidebar">
     <div class="sidebar-top">
-      <div class="user-profile-btn" onclick="document.getElementById('avatar-input').click()" title="Changer votre photo de profil">
+      <div class="user-profile-btn" onclick="document.getElementById('avatar-input').click()">
         <img id="my-avatar" src="/static/default_avatar.png">
         <div>
           <div id="my-username" style="font-size:0.9rem; font-weight:bold;">Anonyme</div>
           <div style="font-size:10px; color:var(--neon-blue); font-family:'Fira Code';">EN LIGNE</div>
         </div>
       </div>
-      <button onclick="createCircuit()" style="background:transparent; border:1px solid var(--border-color); color:var(--neon-blue); padding:6px 12px; border-radius:15px; font-size:11px; cursor:pointer;">+ Circuit</button>
+      <div style="display:flex; gap:5px;">
+        <button onclick="sendFriendRequestPrompt()" style="background:transparent; border:1px solid var(--neon-blue); color:var(--neon-blue); padding:5px 8px; border-radius:15px; font-size:10px; cursor:pointer;">+ Demande</button>
+        <button onclick="createCircuit()" style="background:transparent; border:1px solid var(--border-color); color:#fff; padding:5px 8px; border-radius:15px; font-size:10px; cursor:pointer;">+ Circuit</button>
+      </div>
       <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar()">
     </div>
 
-    <!-- Navigation Onglets (Circuits vs MP) -->
+    <!-- Demandes d'amis en attente -->
+    <div id="requests-panel" class="requests-panel" style="display:none;">
+      <div style="font-size:11px; color:var(--neon-blue); font-weight:bold; margin-bottom:4px;">DEMANDES D'AMIS REÇUES</div>
+      <div id="requests-list"></div>
+    </div>
+
+    <!-- Tabs -->
     <div class="chat-tabs">
       <button class="tab-btn active" id="tab-circuits" onclick="switchTab('circuits')"><i class="fa-solid fa-layer-group"></i> Circuits</button>
-      <button class="tab-btn" id="tab-directs" onclick="switchTab('directs')"><i class="fa-solid fa-user-lock"></i> Directs (MP)</button>
+      <button class="tab-btn" id="tab-directs" onclick="switchTab('directs')"><i class="fa-solid fa-user-check"></i> Mes Amis (MP)</button>
     </div>
 
     <div class="search-box">
@@ -417,21 +400,20 @@
     <div class="chat-list" id="users-container" style="display:none;"></div>
   </div>
 
-  <!-- Zone de Chat Principale -->
+  <!-- Chat Area -->
   <div id="chat-area">
     <div class="chat-header">
       <div class="chat-header-user">
         <button class="back-btn" onclick="closeChatMobile()"><i class="fa-solid fa-arrow-left"></i></button>
-        <img id="chat-header-img" src="/static/default_avatar.png" class="chat-header-avatar" onclick="if(currentCircuitId) document.getElementById('circuit-icon-input').click()" title="Changer l'icône du circuit">
+        <img id="chat-header-img" src="/static/default_avatar.png" class="chat-header-avatar" onclick="if(currentCircuitId) document.getElementById('circuit-icon-input').click()">
         <div>
-          <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez une discussion</div>
+          <div id="chat-title" style="font-weight:bold; font-size:0.95rem;">Sélectionnez un canal</div>
           <div id="chat-subtitle" style="font-size:11px; color:var(--text-muted);">Canal sécurisé</div>
         </div>
       </div>
       <div style="color:var(--text-muted); display:flex; gap:15px; font-size:1.1rem; align-items:center;">
-        <i class="fa-solid fa-image" title="Changer le fond du circuit" style="cursor:pointer;" onclick="if(currentCircuitId) document.getElementById('bg-input').click()"></i>
+        <i class="fa-solid fa-image" title="Changer le fond" style="cursor:pointer;" onclick="if(currentCircuitId) document.getElementById('bg-input').click()"></i>
       </div>
-      <!-- Inputs fichiers masqués -->
       <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="uploadBackground()">
       <input type="file" id="circuit-icon-input" accept="image/*" style="display:none" onchange="uploadCircuitIcon()">
     </div>
@@ -451,7 +433,7 @@
   </div>
 
   <script>
-    const socket = io();
+    const socket = io({ transports: ['websocket', 'polling'] });
     let currentCircuitId = null;
     let currentTargetUser = null;
     let currentUsername = "";
@@ -473,8 +455,11 @@
         document.getElementById('auth-overlay').style.display = 'none';
         document.getElementById('my-username').innerText = currentUsername;
         document.getElementById('my-avatar').src = data.user.avatar_url || '/static/default_avatar.png';
+        
+        socket.emit('join_user_session');
         loadCircuits();
-        loadDirectUsers();
+        loadFriends();
+        loadFriendRequests();
       } else {
         alert(data.error || "Erreur de connexion");
       }
@@ -506,6 +491,79 @@
       document.getElementById('users-container').style.display = tab === 'directs' ? 'block' : 'none';
     }
 
+    async function sendFriendRequestPrompt() {
+      const target = prompt("Entrez le pseudo de la personne à ajouter :");
+      if (!target || !target.trim()) return;
+
+      const res = await fetch('/api/friends/send-request', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({target_user: target.trim()})
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    async function loadFriendRequests() {
+      const res = await fetch('/api/friends/requests');
+      if (!res.ok) return;
+      const requests = await res.json();
+      const panel = document.getElementById('requests-panel');
+      const container = document.getElementById('requests-list');
+
+      if (requests.length === 0) {
+        panel.style.display = 'none';
+        return;
+      }
+
+      panel.style.display = 'block';
+      container.innerHTML = requests.map(r => `
+        <div class="request-item">
+          <span><b>${r.username}</b> veut être votre ami</span>
+          <button class="btn-accept" onclick="acceptFriendRequest('${r.username}')">Accepter</button>
+        </div>
+      `).join('');
+    }
+
+    async function acceptFriendRequest(sender) {
+      const res = await fetch('/api/friends/accept-request', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({sender: sender})
+      });
+      if (res.ok) {
+        loadFriendRequests();
+        loadFriends();
+      }
+    }
+
+    async function loadFriends() {
+      const res = await fetch('/api/friends/list');
+      if (!res.ok) return;
+      const friends = await res.json();
+      const container = document.getElementById('users-container');
+      container.innerHTML = '';
+
+      if (friends.length === 0) {
+        container.innerHTML = `<div style="padding:15px; font-size:0.8rem; color:var(--text-muted);">Aucun ami pour le moment. Utilisez "+ Demande" pour en ajouter.</div>`;
+        return;
+      }
+
+      friends.forEach(u => {
+        const item = document.createElement('div');
+        item.className = `chat-item ${currentTargetUser === u.username ? 'active' : ''}`;
+        item.onclick = () => selectDirectUser(u.username, u.avatar_url, item);
+        item.innerHTML = `
+          <img src="${u.avatar_url || '/static/default_avatar.png'}" class="chat-item-avatar">
+          <div class="chat-item-info">
+            <div class="chat-item-name">${u.username}</div>
+            <div class="chat-item-sub"><i class="fa-solid fa-lock" style="font-size:9px;"></i> Discussion privée</div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
     async function loadCircuits() {
       const res = await fetch('/api/my-circuits');
       if (!res.ok) return;
@@ -517,7 +575,7 @@
         const item = document.createElement('div');
         item.id = `circuit-item-${c.id}`;
         item.className = `chat-item ${currentCircuitId === c.id ? 'active' : ''}`;
-        item.onclick = () => selectCircuit(c.id, c.name, c.code, c.icon_url, item);
+        item.onclick = () => selectCircuit(c.id, c.name, c.code, c.icon_url, c.background_url, item);
         item.innerHTML = `
           <img src="${c.icon_url || '/static/default_avatar.png'}" class="chat-item-avatar" id="circuit-img-${c.id}">
           <div class="chat-item-info">
@@ -528,34 +586,12 @@
         container.appendChild(item);
 
         if (index === 0 && !currentCircuitId && !currentTargetUser && window.innerWidth > 768) {
-          selectCircuit(c.id, c.name, c.code, c.icon_url, item);
+          selectCircuit(c.id, c.name, c.code, c.icon_url, c.background_url, item);
         }
       });
     }
 
-    async function loadDirectUsers() {
-      const res = await fetch('/api/users');
-      if (!res.ok) return;
-      const users = await res.json();
-      const container = document.getElementById('users-container');
-      container.innerHTML = '';
-
-      users.forEach(u => {
-        const item = document.createElement('div');
-        item.className = `chat-item ${currentTargetUser === u.username ? 'active' : ''}`;
-        item.onclick = () => selectDirectUser(u.username, u.avatar_url, item);
-        item.innerHTML = `
-          <img src="${u.avatar_url || '/static/default_avatar.png'}" class="chat-item-avatar">
-          <div class="chat-item-info">
-            <div class="chat-item-name">${u.username}</div>
-            <div class="chat-item-sub"><i class="fa-solid fa-lock" style="font-size:9px;"></i> Chat privé Snapchat/WhatsApp</div>
-          </div>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    async function selectCircuit(id, name, code, iconUrl, element) {
+    async function selectCircuit(id, name, code, iconUrl, bgUrl, element) {
       if (currentCircuitId) socket.emit('leave_circuit', { circuit_id: currentCircuitId });
       currentCircuitId = id;
       currentTargetUser = null;
@@ -568,8 +604,10 @@
       document.getElementById('chat-header-img').src = iconUrl || '/static/default_avatar.png';
       document.getElementById('messages').innerHTML = '';
 
-      document.body.classList.add('chat-active');
+      // Gestion de l'arrière-plan propre au groupe
+      applyBackground(bgUrl);
 
+      document.body.classList.add('chat-active');
       socket.emit('join_circuit', { circuit_id: id });
       loadMessages(id);
       loadMembers(id);
@@ -584,19 +622,25 @@
       if (element) element.classList.add('active');
 
       document.getElementById('chat-title').innerText = `@${username}`;
-      document.getElementById('chat-subtitle').innerText = `Discussion privée cryptée`;
+      document.getElementById('chat-subtitle').innerText = `Chat privé (Ami vérifié)`;
       document.getElementById('chat-header-img').src = avatarUrl || '/static/default_avatar.png';
       document.getElementById('messages').innerHTML = '';
 
-      document.body.classList.add('chat-active');
+      // Remet le fond d'écran par défaut pour le chat privé
+      applyBackground('/static/bg-pirate.jpg');
 
+      document.body.classList.add('chat-active');
       socket.emit('join_private_chat', { target_user: username });
       loadPrivateMessages(username);
     }
 
-    function closeChatMobile() {
-      document.body.classList.remove('chat-active');
+    function applyBackground(url) {
+      const chatArea = document.getElementById('chat-area');
+      const validUrl = (url && url !== "null") ? url : '/static/bg-pirate.jpg';
+      chatArea.style.backgroundImage = `linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.8)), url('${validUrl}')`;
     }
+
+    function closeChatMobile() { document.body.classList.remove('chat-active'); }
 
     async function loadMessages(circuitId) {
       const res = await fetch(`/api/circuit/${circuitId}/messages`);
@@ -619,7 +663,7 @@
 
       const storiesContainer = document.getElementById('stories-container');
       storiesContainer.innerHTML = members.map(m => `
-        <div class="story-item" title="${m.username}" onclick="switchTab('directs'); selectDirectUser('${m.username}', '${m.avatar_url}')">
+        <div class="story-item" title="${m.username}">
           <div class="story-avatar-frame ${m.is_online ? 'online' : ''}">
             <img src="${m.avatar_url || '/static/default_avatar.png'}">
           </div>
@@ -668,7 +712,7 @@
       if (res.ok) {
         document.getElementById('my-avatar').src = data.avatar_url;
         if (currentCircuitId) loadMembers(currentCircuitId);
-        loadDirectUsers();
+        loadFriends();
       }
     }
 
@@ -704,7 +748,9 @@
       if (!fileInput.files[0] || !currentCircuitId) return;
       const formData = new FormData();
       formData.append('background', fileInput.files[0]);
-      await fetch(`/api/circuit/${currentCircuitId}/upload-background`, { method: 'POST', body: formData });
+      const res = await fetch(`/api/circuit/${currentCircuitId}/upload-background`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) applyBackground(data.background_url);
     }
 
     async function uploadCircuitIcon() {
@@ -738,7 +784,7 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // --- EVENEMENTS TEMPS REEL (WEBSOCKETS) ---
+    // --- EVENEMENTS TEMPS REEL & NOTIFICATIONS ---
     socket.on('new_message', data => {
       if (data.circuit_id == currentCircuitId) renderSingleMessage(data);
     });
@@ -749,8 +795,12 @@
       }
     });
 
-    socket.on('presence_update', data => {
-      if (data.circuit_id == currentCircuitId) loadMembers(currentCircuitId);
+    socket.on('notification_friend_request', data => {
+      loadFriendRequests();
+    });
+
+    socket.on('friend_request_accepted', data => {
+      loadFriends();
     });
   </script>
 </body>
