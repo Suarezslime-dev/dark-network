@@ -16,8 +16,6 @@ DB_FILE = os.path.join(app.root_path, 'database.json')
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', ping_timeout=60, ping_interval=25)
 
-# --- BASE DE DONNÉES PERSISTANTE (Fichier JSON) ---
-
 def load_db():
     if os.path.exists(DB_FILE):
         try:
@@ -26,9 +24,9 @@ def load_db():
         except Exception:
             pass
     return {
-        "users": {},           # {username: {password, avatar_url, friends: [], friend_requests: []}}
-        "messages": {},        # {circuit_id: [msg1, msg2]}
-        "private_messages": {},# {room_id: [msg1, msg2]}
+        "users": {},
+        "messages": {},
+        "private_messages": {},
         "circuits": {}
     }
 
@@ -38,7 +36,6 @@ def save_db(data):
 
 db = load_db()
 
-# Initialisation du circuit général
 if "1" not in db["circuits"]:
     db["circuits"]["1"] = {
         "id": "1",
@@ -47,6 +44,11 @@ if "1" not in db["circuits"]:
         "icon_url": "/static/default_avatar.png"
     }
     save_db(db)
+
+def get_current_user():
+    # Priorité : En-tête JS X-Username > Session Flask
+    user = request.headers.get('X-Username') or session.get('username')
+    return user if user and user in db["users"] else None
 
 def generate_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -84,7 +86,6 @@ def login():
     session['username'] = username
     session.permanent = True
 
-    # Initialisation des structures si compte ancien
     db["users"][username].setdefault("friends", [])
     db["users"][username].setdefault("friend_requests", [])
     save_db(db)
@@ -122,16 +123,16 @@ def register():
     session.permanent = True
     return jsonify({"success": True})
 
-# --- GESTION DU SYSTÈME D'AMIS (SNAPCHAT / WHATSAPP) ---
+# --- SYSTEME D'AMIS ---
 
 @app.route('/api/friends/send-request', methods=['POST'])
 def send_friend_request():
-    sender = session.get('username')
+    sender = get_current_user()
+    if not sender:
+        return jsonify({"error": "Non authentifié"}), 401
+
     data = request.json or {}
     target = data.get('target_user', '').strip()
-
-    if not sender:
-        return jsonify({"error": "Session expirée, reconnectez-vous"}), 401
 
     if not target or target not in db["users"]:
         return jsonify({"error": "Utilisateur introuvable"}), 404
@@ -160,9 +161,9 @@ def send_friend_request():
 
 @app.route('/api/friends/accept-request', methods=['POST'])
 def accept_friend_request():
-    username = session.get('username')
+    username = get_current_user()
     if not username:
-        return jsonify({"error": "Non autorisé"}), 401
+        return jsonify({"error": "Non authentifié"}), 401
 
     data = request.json or {}
     sender = data.get('sender', '').strip()
@@ -182,7 +183,7 @@ def accept_friend_request():
 
 @app.route('/api/friends/list', methods=['GET'])
 def get_friends_list():
-    username = session.get('username')
+    username = get_current_user()
     if not username or username not in db["users"]:
         return jsonify([]), 401
 
@@ -198,7 +199,7 @@ def get_friends_list():
 
 @app.route('/api/friends/requests', methods=['GET'])
 def get_friend_requests():
-    username = session.get('username')
+    username = get_current_user()
     if not username or username not in db["users"]:
         return jsonify([]), 401
 
@@ -212,55 +213,11 @@ def get_friend_requests():
     ]
     return jsonify(requests_info)
 
-# --- CIRCUITS & MESSAGES PRIVÉS ---
+# --- CIRCUITS & TCHATS PRIVÉS ---
 
 @app.route('/api/my-circuits', methods=['GET'])
 def get_circuits():
     return jsonify(list(db["circuits"].values()))
-
-@app.route('/api/circuit/create', methods=['POST'])
-def create_circuit():
-    username = session.get('username')
-    if not username:
-        return jsonify({"error": "Non autorisé"}), 401
-
-    data = request.json or {}
-    name = data.get('name', 'Nouveau Circuit').strip()
-    circuit_id = str(len(db["circuits"]) + 1)
-
-    circuit = {
-        "id": circuit_id,
-        "name": name,
-        "code": generate_code(),
-        "icon_url": "/static/default_avatar.png"
-    }
-
-    db["circuits"][circuit_id] = circuit
-    save_db(db)
-    return jsonify({"circuit": circuit})
-
-@app.route('/api/circuit/join', methods=['POST'])
-def join_circuit_code():
-    data = request.json or {}
-    code = data.get('invite_code', '').strip().upper()
-
-    for c_id, c in db["circuits"].items():
-        if c['code'] == code:
-            return jsonify({"success": True, "circuit": c})
-
-    return jsonify({"error": "Code invalide ou introuvable"}), 404
-
-@app.route('/api/circuit/<circuit_id>/members', methods=['GET'])
-def get_members(circuit_id):
-    members = [
-        {
-            "username": user,
-            "avatar_url": info.get("avatar_url", "/static/default_avatar.png"),
-            "is_online": True
-        }
-        for user, info in db["users"].items()
-    ]
-    return jsonify(members)
 
 @app.route('/api/circuit/<circuit_id>/messages', methods=['GET'])
 def get_messages(circuit_id):
@@ -268,7 +225,7 @@ def get_messages(circuit_id):
 
 @app.route('/api/private-messages/<target_user>', methods=['GET'])
 def get_private_messages(target_user):
-    username = session.get('username')
+    username = get_current_user()
     if not username:
         return jsonify([]), 401
 
@@ -284,7 +241,7 @@ def get_private_messages(target_user):
 @app.route('/api/upload-avatar', methods=['POST'])
 def upload_avatar():
     file = request.files.get('avatar')
-    username = session.get('username')
+    username = get_current_user()
     if not file or not username:
         return jsonify({"error": "Erreur d'upload"}), 400
 
@@ -313,9 +270,11 @@ def upload_media():
 # --- WEBSOCKETS ---
 
 @socketio.on('join_user_session')
-def handle_user_session():
-    username = session.get('username')
+def handle_user_session(data=None):
+    data = data or {}
+    username = data.get('username') or session.get('username')
     if username:
+        session['username'] = username
         join_room(username)
 
 @socketio.on('join_circuit')
@@ -323,14 +282,9 @@ def handle_join(data):
     circuit_id = str(data.get('circuit_id'))
     join_room(circuit_id)
 
-@socketio.on('leave_circuit')
-def handle_leave(data):
-    circuit_id = str(data.get('circuit_id'))
-    leave_room(circuit_id)
-
 @socketio.on('join_private_chat')
 def handle_join_private(data):
-    username = session.get('username')
+    username = session.get('username') or data.get('my_username')
     target_user = data.get('target_user')
     if username and target_user:
         if target_user in db["users"].get(username, {}).get("friends", []):
@@ -340,7 +294,7 @@ def handle_join_private(data):
 @socketio.on('send_message')
 def handle_message(data):
     circuit_id = str(data.get('circuit_id'))
-    username = session.get('username', 'Anonyme')
+    username = session.get('username') or data.get('sender', 'Anonyme')
     user_avatar = db["users"].get(username, {}).get('avatar_url', '/static/default_avatar.png')
 
     msg = {
@@ -361,7 +315,7 @@ def handle_message(data):
 
 @socketio.on('send_private_message')
 def handle_private_message(data):
-    sender = session.get('username')
+    sender = session.get('username') or data.get('sender')
     target_user = data.get('target_user')
 
     if not sender or not target_user:
@@ -389,12 +343,6 @@ def handle_private_message(data):
     save_db(db)
 
     emit('new_private_message', msg, room=room_id)
-
-    emit('notification_new_message', {
-        'from': sender,
-        'content': data.get('content', 'A envoyé un média'),
-        'avatar': sender_avatar
-    }, room=target_user)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
