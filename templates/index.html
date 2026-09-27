@@ -21,9 +21,8 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
     
-    /* ARRIÈRE-PLAN IMPOSÉ ET FIXE */
     body { 
-      background: linear-gradient(rgba(7, 9, 14, 0.65), rgba(7, 9, 14, 0.65)), url('/static/bg-pirate.jpg') no-repeat center center fixed;
+      background: linear-gradient(rgba(7, 9, 14, 0.25), rgba(7, 9, 14, 0.25)), url('/static/bg-pirate.jpg') no-repeat center center fixed;
       background-size: cover;
       color: var(--text-main); 
       display: flex; 
@@ -202,7 +201,7 @@
     .chat-item-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-item-sub { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 2px; }
 
-    /* ZONE TCHAT AVEC FOND TRANSPARENT ET BULLES AMÉLIORÉES */
+    /* CHAT AREA */
     #chat-area { 
       flex: 1; 
       display: flex; 
@@ -241,7 +240,6 @@
       gap: 14px; 
     }
     
-    /* DESIGN AMÉLIORÉ DES BULLES DE DISCUSSION */
     .message { display: flex; gap: 10px; max-width: 75%; align-items: flex-end; align-self: flex-start; }
     .message.me { align-self: flex-end; flex-direction: row-reverse; }
     .msg-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-color); }
@@ -308,8 +306,29 @@
     .send-btn:hover { transform: scale(1.06); box-shadow: 0 0 12px var(--neon-glow); }
 
     /* AUTH OVERLAY */
-    #auth-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.92); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-    .auth-box { background: var(--bg-sidebar); padding: 28px; border-radius: 20px; width: 100%; max-width: 350px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 25px rgba(0, 210, 255, 0.15); }
+    #auth-overlay { 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(5, 7, 10, 0.45); 
+      backdrop-filter: blur(8px); 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      z-index: 1000; 
+      padding: 20px; 
+    }
+    .auth-box { 
+      background: var(--bg-sidebar); 
+      padding: 28px; 
+      border-radius: 20px; 
+      width: 100%; 
+      max-width: 350px; 
+      border: 1px solid var(--border-color); 
+      display: flex; 
+      flex-direction: column; 
+      gap: 16px; 
+      box-shadow: 0 0 25px rgba(0, 210, 255, 0.15); 
+    }
     .auth-box input { padding: 12px 16px; background: rgba(5, 7, 10, 0.8); border: 1px solid var(--border-color); color: #fff; border-radius: 10px; outline: none; }
     .auth-box button { padding: 12px; background: var(--neon-blue); border: none; font-weight: bold; border-radius: 10px; cursor: pointer; color: #000; }
 
@@ -325,7 +344,7 @@
 </head>
 <body>
 
-  <!-- Overlay Auth -->
+  <!-- Overlay d'Authentification -->
   <div id="auth-overlay">
     <div class="auth-box">
       <h3 style="color:var(--neon-blue); text-align:center; font-family:'Fira Code'; font-size:1.3rem;">// DARK NETWORK</h3>
@@ -359,7 +378,7 @@
       <div id="requests-list"></div>
     </div>
 
-    <!-- Tabs -->
+    <!-- Onglets -->
     <div class="chat-tabs">
       <button class="tab-btn active" id="tab-circuits" onclick="switchTab('circuits')"><i class="fa-solid fa-layer-group"></i> Circuits</button>
       <button class="tab-btn" id="tab-directs" onclick="switchTab('directs')"><i class="fa-solid fa-user-check"></i> Mes Amis (MP)</button>
@@ -408,7 +427,6 @@
     let currentTargetUser = null;
     let currentUsername = "";
 
-    // VÉRIFICATION AUTO-LOGIN AU DÉMARRAGE
     window.onload = () => {
       const savedUser = localStorage.getItem('circuit_user');
       if (savedUser) {
@@ -418,7 +436,7 @@
         document.getElementById('my-username').innerText = currentUsername;
         document.getElementById('my-avatar').src = userObj.avatar_url || '/static/default_avatar.png';
 
-        socket.emit('join_user_session');
+        socket.emit('join_user_session', { username: currentUsername });
         loadCircuits();
         loadFriends();
         loadFriendRequests();
@@ -438,12 +456,12 @@
       const data = await res.json();
       if (res.ok) {
         currentUsername = data.user.username;
-        localStorage.setItem('circuit_user', JSON.stringify(data.user)); // Sauvegarde permanente
+        localStorage.setItem('circuit_user', JSON.stringify(data.user));
         document.getElementById('auth-overlay').style.display = 'none';
         document.getElementById('my-username').innerText = currentUsername;
         document.getElementById('my-avatar').src = data.user.avatar_url || '/static/default_avatar.png';
 
-        socket.emit('join_user_session');
+        socket.emit('join_user_session', { username: currentUsername });
         loadCircuits();
         loadFriends();
         loadFriendRequests();
@@ -452,7 +470,15 @@
       }
     }
 
-    function logout() {
+    async function logout() {
+      try {
+        await fetch('/api/logout', { 
+          method: 'POST',
+          headers: { 'X-Username': currentUsername }
+        });
+      } catch (e) {
+        console.error("Erreur lors de la déconnexion", e);
+      }
       localStorage.removeItem('circuit_user');
       location.reload();
     }
@@ -487,7 +513,10 @@
 
       const res = await fetch('/api/friends/send-request', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Username': currentUsername
+        },
         body: JSON.stringify({target_user: target.trim()})
       });
       const data = await res.json();
@@ -495,7 +524,9 @@
     }
 
     async function loadFriendRequests() {
-      const res = await fetch('/api/friends/requests');
+      const res = await fetch('/api/friends/requests', {
+        headers: { 'X-Username': currentUsername }
+      });
       if (!res.ok) return;
       const requests = await res.json();
       const panel = document.getElementById('requests-panel');
@@ -515,14 +546,19 @@
     async function acceptFriendRequest(sender) {
       const res = await fetch('/api/friends/accept-request', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Username': currentUsername
+        },
         body: JSON.stringify({sender: sender})
       });
       if (res.ok) { loadFriendRequests(); loadFriends(); }
     }
 
     async function loadFriends() {
-      const res = await fetch('/api/friends/list');
+      const res = await fetch('/api/friends/list', {
+        headers: { 'X-Username': currentUsername }
+      });
       if (!res.ok) return;
       const friends = await res.json();
       const container = document.getElementById('users-container');
@@ -549,7 +585,9 @@
     }
 
     async function loadCircuits() {
-      const res = await fetch('/api/my-circuits');
+      const res = await fetch('/api/my-circuits', {
+        headers: { 'X-Username': currentUsername }
+      });
       if (!res.ok) return;
       const circuits = await res.json();
       const container = document.getElementById('circuits-container');
@@ -572,6 +610,30 @@
           selectCircuit(c.id, c.name, c.code, c.icon_url, item);
         }
       });
+    }
+
+    async function joinCircuit() {
+      const codeInput = document.getElementById('join-code');
+      const code = codeInput.value.trim();
+      if (!code) return;
+
+      const res = await fetch('/api/circuit/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Username': currentUsername
+        },
+        body: JSON.stringify({ invite_code: code })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        codeInput.value = '';
+        loadCircuits();
+        selectCircuit(data.circuit.id, data.circuit.name, data.circuit.code, data.circuit.icon_url);
+      } else {
+        alert(data.error || "Impossible de rejoindre ce circuit.");
+      }
     }
 
     async function selectCircuit(id, name, code, iconUrl, element) {
@@ -607,7 +669,7 @@
       document.getElementById('messages').innerHTML = '';
 
       document.body.classList.add('chat-active');
-      socket.emit('join_private_chat', { target_user: username });
+      socket.emit('join_private_chat', { target_user: username, my_username: currentUsername });
       loadPrivateMessages(username);
     }
 
@@ -621,7 +683,9 @@
     }
 
     async function loadPrivateMessages(targetUser) {
-      const res = await fetch(`/api/private-messages/${targetUser}`);
+      const res = await fetch(`/api/private-messages/${targetUser}`, {
+        headers: { 'X-Username': currentUsername }
+      });
       if (!res.ok) return;
       const messages = await res.json();
       messages.forEach(msg => renderSingleMessage(msg));
@@ -649,9 +713,9 @@
       if (!content) return;
 
       if (currentCircuitId) {
-        socket.emit('send_message', { circuit_id: currentCircuitId, content: content });
+        socket.emit('send_message', { circuit_id: currentCircuitId, content: content, sender: currentUsername });
       } else if (currentTargetUser) {
-        socket.emit('send_private_message', { target_user: currentTargetUser, content: content });
+        socket.emit('send_private_message', { target_user: currentTargetUser, content: content, sender: currentUsername });
       }
       input.value = '';
     }
@@ -665,9 +729,9 @@
       const data = await res.json();
       if (res.ok) {
         if (currentCircuitId) {
-          socket.emit('send_message', { circuit_id: currentCircuitId, media_url: data.media_url });
+          socket.emit('send_message', { circuit_id: currentCircuitId, media_url: data.media_url, sender: currentUsername });
         } else if (currentTargetUser) {
-          socket.emit('send_private_message', { target_user: currentTargetUser, media_url: data.media_url });
+          socket.emit('send_private_message', { target_user: currentTargetUser, media_url: data.media_url, sender: currentUsername });
         }
         fileInput.value = '';
       }
@@ -678,12 +742,15 @@
       if (!fileInput.files[0]) return;
       const formData = new FormData();
       formData.append('avatar', fileInput.files[0]);
-      const res = await fetch('/api/upload-avatar', { method: 'POST', body: formData });
+      const res = await fetch('/api/upload-avatar', { 
+        method: 'POST', 
+        headers: { 'X-Username': currentUsername },
+        body: formData 
+      });
       const data = await res.json();
       if (res.ok) {
         document.getElementById('my-avatar').src = data.avatar_url;
         
-        // Mettre à jour dans le localStorage
         const userObj = JSON.parse(localStorage.getItem('circuit_user') || '{}');
         userObj.avatar_url = data.avatar_url;
         localStorage.setItem('circuit_user', JSON.stringify(userObj));
@@ -710,7 +777,7 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // WEBSOCKETS
+    // GESTION DES WEBSOCKETS
     socket.on('new_message', data => {
       if (data.circuit_id == currentCircuitId) renderSingleMessage(data);
     });
@@ -719,6 +786,11 @@
       if (currentTargetUser && (data.sender === currentTargetUser || data.sender === currentUsername)) {
         renderSingleMessage(data);
       }
+    });
+
+    socket.on('user_status_change', () => {
+      if (currentCircuitId) loadMembers(currentCircuitId);
+      loadFriends();
     });
 
     socket.on('notification_friend_request', () => loadFriendRequests());
