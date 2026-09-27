@@ -127,11 +127,11 @@ def register():
 @app.route('/api/friends/send-request', methods=['POST'])
 def send_friend_request():
     sender = session.get('username')
-    if not sender:
-        return jsonify({"error": "Non autorisé"}), 401
-
     data = request.json or {}
     target = data.get('target_user', '').strip()
+
+    if not sender:
+        return jsonify({"error": "Session expirée, reconnectez-vous"}), 401
 
     if not target or target not in db["users"]:
         return jsonify({"error": "Utilisateur introuvable"}), 404
@@ -151,7 +151,6 @@ def send_friend_request():
     target_user_data.setdefault("friend_requests", []).append(sender)
     save_db(db)
 
-    # Notification temps réel au destinataire via SocketIO
     socketio.emit('notification_friend_request', {
         'from': sender,
         'avatar': sender_user_data.get("avatar_url", "/static/default_avatar.png")
@@ -173,7 +172,6 @@ def accept_friend_request():
         user_data["friend_requests"].remove(sender)
         user_data.setdefault("friends", []).append(sender)
         
-        # Ajout réciproque
         db["users"][sender].setdefault("friends", []).append(username)
         save_db(db)
 
@@ -220,6 +218,50 @@ def get_friend_requests():
 def get_circuits():
     return jsonify(list(db["circuits"].values()))
 
+@app.route('/api/circuit/create', methods=['POST'])
+def create_circuit():
+    username = session.get('username')
+    if not username:
+        return jsonify({"error": "Non autorisé"}), 401
+
+    data = request.json or {}
+    name = data.get('name', 'Nouveau Circuit').strip()
+    circuit_id = str(len(db["circuits"]) + 1)
+
+    circuit = {
+        "id": circuit_id,
+        "name": name,
+        "code": generate_code(),
+        "icon_url": "/static/default_avatar.png"
+    }
+
+    db["circuits"][circuit_id] = circuit
+    save_db(db)
+    return jsonify({"circuit": circuit})
+
+@app.route('/api/circuit/join', methods=['POST'])
+def join_circuit_code():
+    data = request.json or {}
+    code = data.get('invite_code', '').strip().upper()
+
+    for c_id, c in db["circuits"].items():
+        if c['code'] == code:
+            return jsonify({"success": True, "circuit": c})
+
+    return jsonify({"error": "Code invalide ou introuvable"}), 404
+
+@app.route('/api/circuit/<circuit_id>/members', methods=['GET'])
+def get_members(circuit_id):
+    members = [
+        {
+            "username": user,
+            "avatar_url": info.get("avatar_url", "/static/default_avatar.png"),
+            "is_online": True
+        }
+        for user, info in db["users"].items()
+    ]
+    return jsonify(members)
+
 @app.route('/api/circuit/<circuit_id>/messages', methods=['GET'])
 def get_messages(circuit_id):
     return jsonify(db["messages"].get(circuit_id, []))
@@ -230,7 +272,6 @@ def get_private_messages(target_user):
     if not username:
         return jsonify([]), 401
 
-    # Vérification stricte du statut d'ami
     user_friends = db["users"].get(username, {}).get("friends", [])
     if target_user not in user_friends:
         return jsonify({"error": "Vous devez être amis pour lire ces messages"}), 403
@@ -269,25 +310,29 @@ def upload_media():
     file.save(filepath)
     return jsonify({"media_url": f"/static/uploads/{filename}"})
 
-# --- WEBSOCKETS EN TEMPS RÉEL ---
+# --- WEBSOCKETS ---
 
 @socketio.on('join_user_session')
 def handle_user_session():
     username = session.get('username')
     if username:
-        join_room(username)  # Permet de recevoir ses notifications personnelles
+        join_room(username)
 
 @socketio.on('join_circuit')
 def handle_join(data):
     circuit_id = str(data.get('circuit_id'))
     join_room(circuit_id)
 
+@socketio.on('leave_circuit')
+def handle_leave(data):
+    circuit_id = str(data.get('circuit_id'))
+    leave_room(circuit_id)
+
 @socketio.on('join_private_chat')
 def handle_join_private(data):
     username = session.get('username')
     target_user = data.get('target_user')
     if username and target_user:
-        # Rejoint le salon privé unique s'ils sont amis
         if target_user in db["users"].get(username, {}).get("friends", []):
             room_id = get_private_room_id(username, target_user)
             join_room(room_id)
@@ -322,7 +367,6 @@ def handle_private_message(data):
     if not sender or not target_user:
         return
 
-    # Sécurité : Vérifie s'ils sont bien amis
     if target_user not in db["users"].get(sender, {}).get("friends", []):
         emit('error_message', {'message': "Vous devez être amis pour envoyer un message."})
         return
@@ -344,10 +388,8 @@ def handle_private_message(data):
     db["private_messages"][room_id].append(msg)
     save_db(db)
 
-    # Envoi au salon privé
     emit('new_private_message', msg, room=room_id)
 
-    # Notification push instantanée pour le destinataire s'il n'est pas sur le tchat ouvert
     emit('notification_new_message', {
         'from': sender,
         'content': data.get('content', 'A envoyé un média'),
