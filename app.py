@@ -63,7 +63,7 @@ def get_private_room_id(user1, user2):
 def index():
     return render_template('index.html')
 
-# --- AUTHENTIFICATION ---
+# --- AUTHENTIFICATION & SESSIONS ---
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -131,7 +131,19 @@ def register():
     session.permanent = True
     return jsonify({"success": True})
 
-# --- SYSTEME D'AMIS (SNAPCHAT STYLE) ---
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    username = get_current_user()
+    if username and username in db["users"]:
+        db["users"][username]["is_online"] = False
+        db["users"][username]["last_seen"] = datetime.now().strftime("%d/%m %H:%M")
+        save_db(db)
+        socketio.emit('user_status_change', {'username': username, 'is_online': False}, broadcast=True)
+
+    session.clear()
+    return jsonify({"success": True})
+
+# --- SYSTÈME D'AMIS (SNAPCHAT STYLE) ---
 
 @app.route('/api/friends/send-request', methods=['POST'])
 def send_friend_request():
@@ -180,7 +192,7 @@ def accept_friend_request():
     if sender in user_data.get("friend_requests", []):
         user_data["friend_requests"].remove(sender)
         user_data.setdefault("friends", []).append(sender)
-        
+
         db["users"][sender].setdefault("friends", []).append(username)
         save_db(db)
 
@@ -298,7 +310,6 @@ def get_private_messages(target_user):
     room_id = get_private_room_id(username, target_user)
     msgs = db["private_messages"].get(room_id, [])
 
-    # Marquer les messages comme 'lus' (WhatsApp double check)
     updated = False
     for m in msgs:
         if m.get("target") == username and not m.get("read"):
